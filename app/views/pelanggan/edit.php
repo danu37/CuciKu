@@ -1,0 +1,2 @@
+<?php
+// edit.php
