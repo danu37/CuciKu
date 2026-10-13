@@ -1,2 +1,0 @@
-<?php
-// PelangganController.php

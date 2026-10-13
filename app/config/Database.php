@@ -1,2 +1,0 @@
-<?php
-// Database.php
