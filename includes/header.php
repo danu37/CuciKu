@@ -1,0 +1,17 @@
+<?php
+if (!isset($pageTitle)) $pageTitle='LaundryKu';
+$currentPage = basename($_SERVER['PHP_SELF']);
+$readyCount = 0;
+foreach ($_SESSION['laundry_orders'] as $item) if ($item['status']==='ready') $readyCount++;
+?>
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f5f7fb"><title><?= e($pageTitle) ?> | LaundryKu</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"><link href="assets/css/style.css" rel="stylesheet"><link href="assets/css/custom.css" rel="stylesheet"></head><body>
+<div class="app-shell"><div class="sidebar-overlay" id="sidebarOverlay"></div><aside class="sidebar" id="sidebar">
+<a href="index.php" class="brand-lockup text-decoration-none"><span class="brand-icon"><i class="bi bi-droplet-half"></i></span><span><span class="brand-name">LaundryKu</span><span class="brand-caption">Sistem antrean laundry</span></span></a>
+<div class="menu-label">MENU UTAMA</div><nav class="sidebar-nav" aria-label="Navigasi utama">
+<a class="nav-link <?= $currentPage==='index.php'?'active':'' ?>" href="index.php"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a>
+<a class="nav-link <?= in_array($currentPage,['antrean.php','edit.php'],true)?'active':'' ?>" href="antrean.php"><i class="bi bi-list-ol"></i><span>Antrean & Order</span><span class="nav-count"><?= count($_SESSION['laundry_orders']) ?></span></a>
+<a class="nav-link <?= $currentPage==='notifikasi.php'?'active':'' ?>" href="notifikasi.php"><i class="bi bi-bell"></i><span>Notifikasi</span><?php if($readyCount): ?><span class="nav-dot"></span><?php endif; ?></a>
+<a class="nav-link <?= $currentPage==='nota-hilang.php'?'active':'' ?>" href="nota-hilang.php"><i class="bi bi-receipt-cutoff"></i><span>Nota Hilang</span></a>
+</nav><div class="sidebar-bottom"><div class="help-card"><div class="help-icon"><i class="bi bi-shield-check"></i></div><div class="help-title">Struk tetap aman</div><p>Gunakan kode transaksi untuk mencari kembali struk digital.</p><a href="nota-hilang.php" class="help-link">Cari struk <i class="bi bi-arrow-right"></i></a></div><div class="profile-mini"><div class="profile-avatar">AD</div><div class="profile-text"><strong>Admin Laundry</strong><small>Administrator</small></div><a class="profile-more" href="logout.php" title="Keluar"><i class="bi bi-box-arrow-right"></i></a></div></div></aside>
+<main class="main-content"><header class="topbar"><div class="d-flex align-items-center gap-3"><button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Buka menu"><i class="bi bi-list"></i></button><div><div class="topbar-eyebrow">HALO, ADMIN 👋</div><div class="topbar-date"><?= date('l, d F Y') ?></div></div></div><div class="topbar-actions"><div class="system-status"><span class="live-dot"></span> Sistem operasional</div><a class="notification-button position-relative" href="notifikasi.php" aria-label="Notifikasi"><i class="bi bi-bell"></i><?php if($readyCount): ?><span class="notification-count"><?= $readyCount ?></span><?php endif; ?></a><div class="topbar-admin"><div class="profile-avatar">AD</div><span>Admin</span><a href="logout.php" class="topbar-logout" title="Keluar"><i class="bi bi-box-arrow-right"></i></a></div></div></header><div class="page-content">
