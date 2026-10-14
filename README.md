@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # LaundryKu — Frontend Starter Multi-Halaman
 
 Prototipe sistem antrean & status order laundry kiloan menggunakan PHP Native, konsep OOP sederhana, Bootstrap 5.3.8, CSS, dan JavaScript.
@@ -20,3 +21,6 @@ Prototipe sistem antrean & status order laundry kiloan menggunakan PHP Native, k
 - Tarif demo: Reguler Rp7.000/kg (48 jam), Express Rp14.000/kg (12 jam). Sesuaikan dengan keputusan tim.
 - Notifikasi saat ini tampil di dashboard internal; belum mengirim WhatsApp.
 - Untuk pemakaian sungguhan, backend perlu menyimpan pelanggan, order, status, pembayaran, dan data struk di database agar arsip tetap tersedia lintas sesi/perangkat.
+=======
+# Aplikasi Laundry
+>>>>>>> 1b0f62f06b1f15b44fcb18b37b7d39f5d647660c
