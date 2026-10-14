@@ -1,7 +1,6 @@
 <?php
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 date_default_timezone_set('Asia/Jakarta');
-require_once __DIR__ . '/database.php';
 if (!isset($_SESSION['laundry_orders'])) {
     $today = new DateTimeImmutable('today');
     $base = $today->format('Y-m-d');
