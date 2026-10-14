@@ -1,8 +1,20 @@
-
 <?php
+
+$https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+
 if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/cuciKu/',
+        'secure' => $https,
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+
     session_start();
 }
+
+
 
 require_once __DIR__ . '/includes/database.php';
 
@@ -48,7 +60,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['admin_logged_in'] = true;
                 $_SESSION['admin_id'] = $admin['id'];
                 $_SESSION['admin_name'] = $admin['nama'];
+
                 $_SESSION['admin_username'] = $admin['username'];
+
+                // Cookie penanda login admin selama 7 hari.
+                // Jangan menyimpan password di cookie.
+                setcookie('cuciku_role', 'admin', [
+                    'expires' => time() + (7 * 24 * 60 * 60),
+                    'path' => '/cuciKu/',
+                    'secure' => $https,
+                    'httponly' => true,
+                    'samesite' => 'Lax'
+                ]);
 
                 header('Location: admin/index.php');
                 exit;
@@ -72,6 +95,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['pelanggan_nama'] = $pelanggan['nama'];
                 $_SESSION['pelanggan_email'] = $pelanggan['email'];
 
+                setcookie('cuciku_role', 'pelanggan', [
+                    'expires' => time() + (7 * 24 * 60 * 60),
+                    'path' => '/cuciKu/',
+                    'secure' => $https,
+                    'httponly' => true,
+                    'samesite' => 'Lax'
+                ]);
+
                 header('Location: pengguna/index.php');
                 exit;
             }
@@ -84,12 +115,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-function e($value) {
+function e($value)
+{
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -393,129 +426,129 @@ function e($value) {
         }
     </style>
 </head>
+
 <body>
 
-<div class="page">
+    <div class="page">
 
-    <aside class="left-panel">
-        <a class="brand" href="login.php">Cuci<span>Ku.</span></a>
+        <aside class="left-panel">
+            <a class="brand" href="login.php">Cuci<span>Ku.</span></a>
 
-        <div class="hero-content">
-            <span class="eyebrow">LAUNDRY SERVICE</span>
-            <h1>Pakaian bersih,<br>hari lebih nyaman.</h1>
-            <p>
-                Kelola pesanan laundry dengan mudah. Pesan layanan,
-                pantau proses pencucian, dan cek riwayat dalam satu tempat.
-            </p>
+            <div class="hero-content">
+                <span class="eyebrow">LAUNDRY SERVICE</span>
+                <h1>Pakaian bersih,<br>hari lebih nyaman.</h1>
+                <p>
+                    Kelola pesanan laundry dengan mudah. Pesan layanan,
+                    pantau proses pencucian, dan cek riwayat dalam satu tempat.
+                </p>
 
-            <div class="features">
-                <div class="feature">
-                    <div class="feature-icon">🧺</div>
-                    <span>Pemesanan laundry lebih praktis</span>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">⏱️</div>
-                    <span>Pantau status dan estimasi selesai</span>
-                </div>
-                <div class="feature">
-                    <div class="feature-icon">🧾</div>
-                    <span>Nomor nota dan riwayat pesanan</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="left-footer">
-            © <?= date('Y') ?> CuciKu. Laundry Bersih, Hidup Lebih Praktis.
-        </div>
-    </aside>
-
-    <main class="right-panel">
-        <div class="login-card">
-
-            <a class="mobile-brand" href="login.php">Cuci<span>Ku.</span></a>
-
-            <div class="login-heading">
-                <div class="small-title">Selamat Datang Kembali</div>
-                <h2>Masuk ke CuciKu</h2>
-                <p>Masukkan akun kamu untuk melanjutkan ke dashboard.</p>
-            </div>
-
-            <?php if ($berhasil !== ''): ?>
-                <div class="alert alert-success">
-                    <?= e($berhasil) ?>
-                </div>
-            <?php endif; ?>
-
-            <?php if ($error !== ''): ?>
-                <div class="alert alert-danger">
-                    <?= e($error) ?>
-                </div>
-            <?php endif; ?>
-
-            <form method="POST" action="login.php">
-                <div class="mb-4">
-                    <label for="username_email" class="form-label">
-                        Username Admin / Email Pengguna
-                    </label>
-                    <input
-                        type="text"
-                        name="username_email"
-                        id="username_email"
-                        class="form-control"
-                        placeholder="Masukkan username atau email"
-                        value="<?= e($_POST['username_email'] ?? '') ?>"
-                        autocomplete="username"
-                        required
-                        autofocus
-                    >
-                </div>
-
-                <div class="mb-4">
-                    <label for="password" class="form-label">Password</label>
-                    <div class="password-wrap">
-                        <input
-                            type="password"
-                            name="password"
-                            id="password"
-                            class="form-control"
-                            placeholder="Masukkan password"
-                            autocomplete="current-password"
-                            required
-                        >
-                        <button type="button" class="show-password"
-                                id="togglePassword">Lihat</button>
+                <div class="features">
+                    <div class="feature">
+                        <div class="feature-icon">🧺</div>
+                        <span>Pemesanan laundry lebih praktis</span>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">⏱️</div>
+                        <span>Pantau status dan estimasi selesai</span>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🧾</div>
+                        <span>Nomor nota dan riwayat pesanan</span>
                     </div>
                 </div>
-
-                <button type="submit" class="btn btn-login">
-                    Masuk ke Akun →
-                </button>
-            </form>
-
-            <div class="register-text">
-                Belum punya akun pengguna?
-                <a href="register.php">Daftar sekarang</a>
             </div>
 
-            <div class="secure-note">
-                🔒 Akun kamu dilindungi melalui proses autentikasi.
+            <div class="left-footer">
+                © <?= date('Y') ?> CuciKu. Laundry Bersih, Hidup Lebih Praktis.
             </div>
-        </div>
-    </main>
+        </aside>
 
-</div>
+        <main class="right-panel">
+            <div class="login-card">
 
-<script>
-const passwordInput = document.getElementById('password');
-const togglePassword = document.getElementById('togglePassword');
+                <a class="mobile-brand" href="login.php">Cuci<span>Ku.</span></a>
 
-togglePassword.addEventListener('click', function () {
-    const sedangTampil = passwordInput.type === 'text';
+                <div class="login-heading">
+                    <div class="small-title">Selamat Datang Kembali</div>
+                    <h2>Masuk ke CuciKu</h2>
+                    <p>Masukkan akun kamu untuk melanjutkan ke dashboard.</p>
+                </div>
 
-    passwordInput.type = sedangTampil ? 'password' : 'text';
-    togglePassword.textContent = sedangTampil ? 'Lihat' : 'Sembunyikan';
-});
-</script>
+                <?php if ($berhasil !== ''): ?>
+                    <div class="alert alert-success">
+                        <?= e($berhasil) ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($error !== ''): ?>
+                    <div class="alert alert-danger">
+                        <?= e($error) ?>
+                    </div>
+                <?php endif; ?>
+
+                <form method="POST" action="login.php">
+                    <div class="mb-4">
+                        <label for="username_email" class="form-label">
+                            Username Admin / Email Pengguna
+                        </label>
+                        <input
+                            type="text"
+                            name="username_email"
+                            id="username_email"
+                            class="form-control"
+                            placeholder="Masukkan username atau email"
+                            value="<?= e($_POST['username_email'] ?? '') ?>"
+                            autocomplete="username"
+                            required
+                            autofocus>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="password" class="form-label">Password</label>
+                        <div class="password-wrap">
+                            <input
+                                type="password"
+                                name="password"
+                                id="password"
+                                class="form-control"
+                                placeholder="Masukkan password"
+                                autocomplete="current-password"
+                                required>
+                            <button type="button" class="show-password"
+                                id="togglePassword">Lihat</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-login">
+                        Masuk ke Akun →
+                    </button>
+                </form>
+
+                <div class="register-text">
+                    Belum punya akun pengguna?
+                    <a href="register.php">Daftar sekarang</a>
+                </div>
+
+                <div class="secure-note">
+                    🔒 Akun kamu dilindungi melalui proses autentikasi.
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        const passwordInput = document.getElementById('password');
+        const togglePassword = document.getElementById('togglePassword');
+
+        togglePassword.addEventListener('click', function() {
+            const sedangTampil = passwordInput.type === 'text';
+
+            passwordInput.type = sedangTampil ? 'password' : 'text';
+            togglePassword.textContent = sedangTampil ? 'Lihat' : 'Sembunyikan';
+        });
+    </script>
 
 </body>
+
 </html>
