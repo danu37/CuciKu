@@ -1,4 +1,3 @@
-
 <?php
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
@@ -14,203 +13,143 @@ if (
 
 $namaPengguna = $_SESSION['pelanggan_nama'] ?? 'Pelanggan';
 $halamanAktif = $halamanAktif ?? 'dashboard';
+$inisialPengguna = strtoupper(substr($namaPengguna, 0, 1));
 
-function eHeader($nilai) {
+function eHeader($nilai)
+{
     return htmlspecialchars((string) $nilai, ENT_QUOTES, 'UTF-8');
 }
 ?>
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7fb">
     <title><?= eHeader($judulHalaman ?? 'Dashboard') ?> | CuciKu</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/cuciKu/assets/css/style.css" rel="stylesheet">
+    <link href="/cuciKu/assets/css/custom.css" rel="stylesheet">
 
     <style>
-        :root {
-            --ck-primary: #087f8c;
-            --ck-dark: #075b66;
-            --ck-accent: #19b5a5;
-            --ck-bg: #f3f7fa;
-            --ck-text: #183044;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            background: var(--ck-bg);
-            color: var(--ck-text);
-            font-family: 'DM Sans', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .ck-navbar {
-            background: rgba(255, 255, 255, .96);
-            border-bottom: 1px solid #e5edf1;
-            box-shadow: 0 4px 18px #18304405;
-            padding: 13px 0;
-        }
-
-        .ck-brand {
-            color: var(--ck-dark);
-            text-decoration: none;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 27px;
+        .customer-brand {
+            color: #182538;
+            font-family: Manrope, sans-serif;
+            font-size: 17px;
             font-weight: 800;
-            letter-spacing: -.8px;
+            letter-spacing: -.4px;
         }
 
-        .ck-brand span {
-            color: var(--ck-accent);
+        .customer-brand span {
+            color: var(--brand);
         }
 
-        .ck-nav-link {
-            color: #637582;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 700;
-            padding: 10px 13px;
-            border-radius: 10px;
-            transition: .2s;
-        }
-
-        .ck-nav-link:hover {
-            color: var(--ck-primary);
-            background: #eaf8f6;
-        }
-
-        .ck-nav-link.active {
-            color: var(--ck-primary);
-            background: #e4f7f4;
-        }
-
-        .ck-user {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 5px 12px 5px 5px;
-            border: 1px solid #e5edf1;
-            border-radius: 30px;
-            margin-left: 12px;
-        }
-
-        .ck-avatar {
+        .customer-logout {
             display: grid;
             place-items: center;
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            color: white;
-            background: linear-gradient(135deg, var(--ck-primary), var(--ck-accent));
-            font-weight: 800;
-        }
-
-        .ck-user-name {
-            max-width: 135px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            font-size: 12px;
-            font-weight: 800;
-        }
-
-        .ck-user-role {
-            color: #84929c;
-            font-size: 10px;
-        }
-
-        .ck-logout {
-            color: #c24141;
-            border: 1px solid #f0dada;
-            border-radius: 10px;
+            color: #8a96a5;
+            font-size: 16px;
+            padding: 5px;
             text-decoration: none;
-            font-weight: 700;
-            font-size: 13px;
-            padding: 10px 13px;
-            margin-left: 12px;
-            transition: .2s;
         }
 
-        .ck-logout:hover {
-            color: #a32121;
-            background: #fff0f0;
+        .customer-logout:hover {
+            color: #c24141;
         }
 
-        .ck-main {
-            flex: 1;
-            width: 100%;
-        }
-
-        @media (max-width: 991px) {
-            .ck-nav-link {
-                display: block;
-                margin-top: 5px;
-            }
-
-            .ck-user {
-                margin: 12px 0 5px;
-                width: fit-content;
-            }
-
-            .ck-logout {
-                display: inline-block;
-                margin: 8px 0;
+        @media (max-height: 720px) {
+            .customer-help-card {
+                display: none;
             }
         }
     </style>
 </head>
 <body>
+<div class="app-shell">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-<nav class="navbar navbar-expand-lg ck-navbar">
-    <div class="container">
-        <a class="ck-brand" href="index.php">Cuci<span>Ku.</span></a>
+    <aside class="sidebar" id="sidebar">
+        <a href="index.php" class="brand-lockup text-decoration-none">
+            <span class="brand-icon"><i class="bi bi-droplet-half"></i></span>
+            <span>
+                <span class="brand-name customer-brand">Cuci<span>Ku</span></span>
+                <span class="brand-caption">Layanan laundry pelanggan</span>
+            </span>
+        </a>
 
-        <button class="navbar-toggler" type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#ckMenu"
-                aria-controls="ckMenu"
-                aria-expanded="false"
-                aria-label="Buka menu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        <div class="menu-label">MENU PELANGGAN</div>
+        <nav class="sidebar-nav" aria-label="Navigasi pelanggan">
+            <a class="nav-link <?= $halamanAktif === 'dashboard' ? 'active' : '' ?>"
+               href="index.php">
+                <i class="bi bi-grid-1x2-fill"></i>
+                <span>Dashboard</span>
+            </a>
+            <a class="nav-link <?= $halamanAktif === 'pesan' ? 'active' : '' ?>"
+               href="buat-pesanan.php">
+                <i class="bi bi-bag-plus"></i>
+                <span>Pesan Laundry</span>
+            </a>
+            <a class="nav-link <?= $halamanAktif === 'struk' ? 'active' : '' ?>"
+               href="cek-nota.php">
+                <i class="bi bi-receipt-cutoff"></i>
+                <span>Struk</span>
+            </a>
+            <a class="nav-link <?= $halamanAktif === 'riwayat' ? 'active' : '' ?>"
+               href="riwayat.php">
+                <i class="bi bi-receipt"></i>
+                <span>Riwayat Pesanan</span>
+            </a>
+        </nav>
 
-        <div class="collapse navbar-collapse" id="ckMenu">
-            <div class="navbar-nav ms-auto align-items-lg-center">
-                <a class="ck-nav-link <?= $halamanAktif === 'dashboard' ? 'active' : '' ?>"
-                   href="index.php">Dashboard</a>
+        <div class="sidebar-bottom">
+            <div class="help-card customer-help-card">
+                <div class="help-icon"><i class="bi bi-shield-check"></i></div>
+                <div class="help-title">Pesanan terpantau</div>
+                <p>Pantau proses laundry dan simpan nomor nota untuk melihat detail pesanan.</p>
+                <a href="riwayat.php" class="help-link">
+                    Lihat pesanan <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
 
-                <a class="ck-nav-link <?= $halamanAktif === 'pesan' ? 'active' : '' ?>"
-                   href="buat-pesanan.php">Pesan Laundry</a>
-
-                <a class="ck-nav-link <?= $halamanAktif === 'riwayat' ? 'active' : '' ?>"
-                   href="riwayat.php">Riwayat Pesanan</a>
-
-                <div class="ck-user">
-                    <div class="ck-avatar">
-                        <?= eHeader(strtoupper(substr($namaPengguna, 0, 1))) ?>
-                    </div>
-                    <div>
-                        <div class="ck-user-name"><?= eHeader($namaPengguna) ?></div>
-                        <div class="ck-user-role">Pelanggan CuciKu</div>
-                    </div>
+            <div class="profile-mini">
+                <div class="profile-avatar"><?= eHeader($inisialPengguna) ?></div>
+                <div class="profile-text">
+                    <strong><?= eHeader($namaPengguna) ?></strong>
+                    <small>Pelanggan CuciKu</small>
                 </div>
-
-                <a class="ck-logout"
-                   href="../logout.php"
+                <a class="customer-logout" href="../logout.php"
+                   title="Keluar" aria-label="Keluar"
                    onclick="return confirm('Yakin ingin keluar dari akun?')">
-                    ↗ Logout
+                    <i class="bi bi-box-arrow-right"></i>
                 </a>
             </div>
         </div>
-    </div>
-</nav>
+    </aside>
 
-<main class="ck-main">
+    <main class="main-content">
+        <header class="topbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="mobile-menu-btn" id="mobileMenuBtn" type="button"
+                        aria-label="Buka menu">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div>
+                    <div class="topbar-eyebrow">HALO, <?= eHeader(strtoupper($namaPengguna)) ?></div>
+                    <div class="topbar-date"><?= date('l, d F Y') ?></div>
+                </div>
+            </div>
+
+            <div class="topbar-actions">
+                <div class="system-status">
+                    <span class="live-dot"></span> Akun pelanggan aktif
+                </div>
+                <div class="topbar-admin">
+                    <div class="profile-avatar"><?= eHeader($inisialPengguna) ?></div>
+                    <span><?= eHeader($namaPengguna) ?></span>
+                </div>
+            </div>
+        </header>
+
+        <div class="page-content">

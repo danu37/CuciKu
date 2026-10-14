@@ -75,10 +75,20 @@ require __DIR__ . '/includes/header.php';
 .stat .num{font-size:30px;font-weight:800}
 .stat small{color:#718096}
 .panel{background:white;padding:22px;border:1px solid #e4ebef;border-radius:16px;margin-top:25px}
+.nota-lookup{display:flex;align-items:center;gap:18px;background:#fff;border:1px solid #e6edf2;border-radius:16px;padding:20px 22px;margin-top:22px;box-shadow:0 3px 12px #162c3e05}
+.nota-lookup-icon{display:grid;place-items:center;flex:0 0 48px;height:48px;border-radius:14px;background:#e7f5f2;color:#267b72;font-size:22px}
+.nota-lookup-copy{flex:1;min-width:0}
+.nota-lookup-copy h2{font-size:15px;font-weight:800;margin:0 0 4px}
+.nota-lookup-copy p{font-size:12px;color:#8793a1;margin:0}
+.nota-lookup-form{display:flex;gap:8px;min-width:min(390px,48%)}
+.nota-lookup-form .form-control{min-height:42px;border-color:#e0e6ed;border-radius:9px;font-size:12px}
+.nota-lookup-form .form-control:focus{border-color:#267b72;box-shadow:0 0 0 3px #267b721c}
+.nota-lookup-form .btn{white-space:nowrap}
 .badge-status{display:inline-block;padding:7px 10px;border-radius:20px;font-size:12px;font-weight:bold;background:#e6f3ff;color:#1769aa}
 .status-ready{background:#d8f8e8;color:#117548}
 .status-completed{background:#e9e5ff;color:#5944ad}
 .status-cancelled{background:#ffe2e2;color:#b42318}
+@media(max-width:700px){.nota-lookup{align-items:flex-start;flex-wrap:wrap;padding:17px}.nota-lookup-icon{flex-basis:40px;height:40px}.nota-lookup-copy{flex-basis:calc(100% - 60px)}.nota-lookup-form{min-width:100%}}
 @media(max-width:600px){.hero{padding:24px}.hero h1{font-size:24px}.panel{padding:14px}}
 </style>
 
@@ -87,6 +97,23 @@ require __DIR__ . '/includes/header.php';
         <h1>Halo, <?= e($nama) ?>! 👋</h1>
         <p>Selamat datang di CuciKu. Pesan laundry dan pantau status cucianmu dengan mudah.</p>
         <a class="btn-order" href="buat-pesanan.php">+ Buat Pesanan Laundry</a>
+    </section>
+
+    <section class="nota-lookup" aria-labelledby="notaLookupTitle">
+        <div class="nota-lookup-icon"><i class="bi bi-receipt-cutoff"></i></div>
+        <div class="nota-lookup-copy">
+            <h2 id="notaLookupTitle">Cari struk pesanan</h2>
+            <p>Masukkan kode transaksi untuk membuka dan mencetak struk.</p>
+        </div>
+        <form class="nota-lookup-form" method="get" action="cek-nota.php">
+            <label class="visually-hidden" for="kodeNotaDashboard">Kode nota</label>
+            <input class="form-control" type="search" id="kodeNotaDashboard"
+                   name="nota" placeholder="Kode transaksi, contoh LD-20261014-ABC123"
+                   maxlength="40" required>
+            <button class="btn btn-brand" type="submit">
+                <i class="bi bi-receipt me-1"></i> Cari Struk
+            </button>
+        </form>
     </section>
 
     <h4 class="fw-bold mb-3">Ringkasan Pesanan</h4>
