@@ -1,5 +1,5 @@
 <?php
-require __DIR__.'/includes/init.php';
+require __DIR__.'/../includes/init.php';
 $pageTitle='Antrean & Order';
 $allowedStatuses=['waiting','washing','drying','ironing','ready','completed','cancelled'];
 $errors=[];
@@ -25,7 +25,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 }
 $orders=$_SESSION['laundry_orders'];sortOrders($orders);$query=trim($_GET['q']??'');$status=$_GET['status']??'all';$filtered=array_values(array_filter($orders,function($o)use($query,$status){$matchQuery=$query===''||stripos($o['code'],$query)!==false||stripos($o['customer'],$query)!==false||stripos($o['phone'],$query)!==false;$matchStatus=$status==='all'||$o['status']===$status;return $matchQuery&&$matchStatus;}));$perPage=5;$totalFiltered=count($filtered);$pages=max(1,(int)ceil($totalFiltered/$perPage));$page=max(1,min($pages,(int)($_GET['page']??1)));$pageOrders=array_slice($filtered,($page-1)*$perPage,$perPage);
 $modalError=$_SESSION['queue_modal_error']??null;unset($_SESSION['queue_modal_error']);$addPost=($modalError['action']??'')==='add_order'?($modalError['post']??[]):[];$editPost=($modalError['action']??'')==='edit_order'?($modalError['post']??[]):[];
-require __DIR__.'/includes/header.php'; ?>
+require __DIR__.'/../includes/header.php'; ?>
 <div class="page-heading"><div><h1>Antrean & Order</h1><p>Kelola transaksi, pantau status cucian, dan prioritaskan deadline terdekat.</p></div><button class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#addOrderModal"><i class="bi bi-plus-lg me-2"></i>Tambah transaksi</button></div><?php showFlash(); ?>
 <?php if($modalError && !empty($modalError['errors'])): ?><div class="alert alert-danger"><strong>Periksa kembali data:</strong><ul class="mb-0 mt-1"><?php foreach($modalError['errors'] as $err): ?><li><?= e($err) ?></li><?php endforeach; ?></ul></div><?php endif; ?>
 <section class="queue-card"><div class="queue-card-header"><div><div class="section-title-row"><h2>Daftar transaksi</h2><span class="table-count"><?= $totalFiltered ?> order</span></div><p>Halaman <?= $page ?> dari <?= $pages ?> · <?= $perPage ?> order per halaman.</p></div></div>
@@ -45,4 +45,4 @@ editModal.addEventListener('show.bs.modal',function(event){const b=event.related
 <?php if($editPost): ?>document.addEventListener('DOMContentLoaded',()=>{const m=new bootstrap.Modal(editModal);m.show();document.getElementById('editCustomer').value=<?= json_encode($editPost['customer']??'') ?>;document.getElementById('editPhone').value=<?= json_encode($editPost['phone']??'') ?>;document.getElementById('editPackage').value=<?= json_encode($editPost['package']??'Reguler') ?>;document.getElementById('editWeight').value=<?= json_encode($editPost['weight']??'1') ?>;document.getElementById('editDateIn').value=<?= json_encode($editPost['dateIn']??'') ?>;document.getElementById('editStatus').value=<?= json_encode($editPost['status']??'waiting') ?>;document.getElementById('editPaid').checked=<?= isset($editPost['paid'])?'true':'false' ?>;});<?php endif; ?>
 <?php if($addPost || (($_GET['modal']??'')==='add')): ?>document.addEventListener('DOMContentLoaded',()=>new bootstrap.Modal(document.getElementById('addOrderModal')).show());<?php endif; ?>
 </script>
-<?php require __DIR__.'/includes/footer.php'; ?>
+<?php require __DIR__.'/../includes/footer.php'; ?>

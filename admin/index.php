@@ -1,10 +1,10 @@
 <?php
-require __DIR__.'/includes/init.php';
+require __DIR__.'/../includes/init.php';
 $pageTitle='Dashboard';
 $orders=$_SESSION['laundry_orders']; sortOrders($orders);
 $total=count($orders); $waiting=$processing=$ready=$completed=0; $revenue=0;
 foreach($orders as $o){ if($o['status']==='waiting')$waiting++; if(in_array($o['status'],['washing','drying','ironing'],true))$processing++; if($o['status']==='ready')$ready++; if($o['status']==='completed')$completed++; if($o['paid'])$revenue+=totalOrder($o); }
-require __DIR__.'/includes/header.php'; ?>
+require __DIR__.'/../includes/header.php'; ?>
 <div class="page-heading"><div><h1>Dashboard</h1><p>Pantau transaksi, antrean, dan status cucian dalam satu tempat.</p></div><a class="btn btn-brand" href="antrean.php?modal=add"><i class="bi bi-plus-lg me-2"></i>Tambah transaksi</a></div>
 <?php showFlash(); ?>
 <?php if($ready): ?><div class="ready-alert"><div class="ready-alert-icon"><i class="bi bi-bell-fill"></i></div><div class="ready-alert-copy"><strong><?= $ready ?> cucian siap diambil</strong><span>Periksa order yang siap diserahkan kepada pelanggan.</span></div><a href="notifikasi.php" class="ready-alert-link">Lihat notifikasi <i class="bi bi-arrow-right"></i></a></div><?php endif; ?>
@@ -19,4 +19,4 @@ require __DIR__.'/includes/header.php'; ?>
 <?php $shown=0; foreach($orders as $o): if(in_array($o['status'],['completed','cancelled'],true))continue; if($shown++>=5)break; ?><tr><td><span class="order-code"><?= e($o['code']) ?></span><small class="cell-subtext">Masuk <?= date('H.i',strtotime($o['dateIn'])) ?></small></td><td><div class="customer-cell"><span class="customer-avatar"><?= e(strtoupper(substr($o['customer'],0,1))) ?></span><span><strong><?= e($o['customer']) ?></strong><small><?= e($o['phone']) ?></small></span></div></td><td><span class="package-pill <?= $o['package']==='Express'?'package-express':'package-regular' ?>"><?= e($o['package']) ?></span></td><td><strong><?= e($o['weight']) ?> kg</strong></td><td><span class="deadline-text"><?= e(deadlineLabel($o['deadline'])) ?></span></td><td><strong class="price-text"><?= rupiah(totalOrder($o)) ?></strong></td><td><span class="status-badge <?= e(statusClass($o['status'])) ?>"><span class="status-dot"></span><?= e(statusLabel($o['status'])) ?></span></td></tr><?php endforeach; ?>
 </tbody></table></div><div class="table-footer"><span><i class="bi bi-info-circle me-1"></i>Struk digital bisa dicari kembali jika nota kertas hilang.</span><a href="nota-hilang.php">Cari struk <i class="bi bi-arrow-right"></i></a></div></section>
 <div class="demo-note"><i class="bi bi-info-circle-fill"></i><span><strong>Mode prototipe:</strong> data disimpan sementara di session browser/server. Setelah integrasi, ganti penyimpanan contoh ini dengan database MySQL/MariaDB.</span></div>
-<?php require __DIR__.'/includes/footer.php'; ?>
+<?php require __DIR__.'/../includes/footer.php'; ?>

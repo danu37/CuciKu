@@ -5,7 +5,7 @@ $readyCount = 0;
 foreach ($_SESSION['laundry_orders'] as $item) if ($item['status']==='ready') $readyCount++;
 ?>
 <!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f5f7fb"><title><?= e($pageTitle) ?> | LaundryKu</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"><link href="assets/css/style.css" rel="stylesheet"><link href="assets/css/custom.css" rel="stylesheet"></head><body>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"><link href="/cuciKu/assets/css/style.css" rel="stylesheet"><link href="/cuciKu/assets/css/custom.css" rel="stylesheet"></head><body>
 <div class="app-shell"><div class="sidebar-overlay" id="sidebarOverlay"></div><aside class="sidebar" id="sidebar">
 <a href="index.php" class="brand-lockup text-decoration-none"><span class="brand-icon"><i class="bi bi-droplet-half"></i></span><span><span class="brand-name">LaundryKu</span><span class="brand-caption">Sistem antrean laundry</span></span></a>
 <div class="menu-label">MENU UTAMA</div><nav class="sidebar-nav" aria-label="Navigasi utama">
