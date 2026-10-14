@@ -31,10 +31,6 @@ try {
 
         echo 'Akun admin berhasil dibuat.';
     }
-
-    echo '<br>Username: admin';
-    echo '<br>Password: laundry123';
-
 } catch (PDOException $e) {
     error_log($e->getMessage());
     echo 'Gagal membuat akun. Periksa tabel admins dan koneksi database.';

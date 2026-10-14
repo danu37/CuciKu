@@ -1,0 +1,5 @@
+DB_HOST=localhost
+DB_NAME=laundryku
+DB_USERNAME=root
+DB_PASSWORD=
+DB_CHARSET=utf8mb4
