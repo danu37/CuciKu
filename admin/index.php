@@ -53,9 +53,14 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <h1>Dashboard</h1>
             <p>Pantau transaksi, antrean, dan status cucian dalam satu tempat.</p>
         </div>
-        <a class="btn btn-brand" href="antrean.php?modal=add">
-            <i class="bi bi-plus-lg me-2"></i>Tambah transaksi
-        </a>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a class="btn btn-outline-brand" href="pelanggan.php?modal=add">
+                <i class="bi bi-person-plus me-1"></i>Tambah pelanggan
+            </a>
+            <a class="btn btn-brand" href="antrean.php?modal=add">
+                <i class="bi bi-plus-lg me-1"></i>Tambah transaksi
+            </a>
+        </div>
     </div>
 
     <?php showFlash(); ?>

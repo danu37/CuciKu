@@ -65,6 +65,13 @@ try {
     error_log($e->getMessage());
 }
 
+// Pagination aktivitas notifikasi (10 per halaman)
+$noticePerPage = 10;
+$totalNotices = count($notices);
+$totalNoticePages = max(1, (int) ceil($totalNotices / $noticePerPage));
+$noticePage = max(1, min($totalNoticePages, (int) ($_GET['page'] ?? 1)));
+$pageNotices = array_slice($notices, ($noticePage - 1) * $noticePerPage, $noticePerPage);
+
 /* Hitung jumlah notifikasi */
 $attentionCount = count($ready) + count($overdue);
 
@@ -408,7 +415,7 @@ require __DIR__ . '/../includes/header.php';
                 <span>Notifikasi akan muncul setelah aktivitas transaksi tercatat.</span>
             </div>
         <?php else: ?>
-            <?php foreach ($notices as $n): ?>
+            <?php foreach ($pageNotices as $n): ?>
                 <div class="notification-row <?= empty($n['dibaca']) ? 'notification-unread' : '' ?>">
                     <div class="notification-symbol">
                         <i class="bi bi-bell"></i>
@@ -432,6 +439,33 @@ require __DIR__ . '/../includes/header.php';
                     </div>
                 </div>
             <?php endforeach; ?>
+
+            <?php if ($totalNoticePages > 1): ?>
+                <div class="d-flex justify-content-between align-items-center p-3 border-top flex-wrap gap-2 bg-light">
+                    <span class="text-muted small">
+                        Menampilkan <strong><?= (($noticePage - 1) * $noticePerPage + 1) ?></strong> – <strong><?= min($totalNotices, $noticePage * $noticePerPage) ?></strong> dari <strong><?= $totalNotices ?></strong> aktivitas (10 per halaman)
+                    </span>
+                    <nav aria-label="Navigasi aktivitas">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item <?= ($noticePage <= 1) ? 'disabled' : '' ?>">
+                                <a class="page-link" href="?page=<?= $noticePage - 1 ?>" aria-label="Sebelumnya">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                            <?php for ($p = 1; $p <= $totalNoticePages; $p++): ?>
+                                <li class="page-item <?= ($p == $noticePage) ? 'active' : '' ?>">
+                                    <a class="page-link" href="?page=<?= $p ?>"><?= $p ?></a>
+                                </li>
+                            <?php endfor; ?>
+                            <li class="page-item <?= ($noticePage >= $totalNoticePages) ? 'disabled' : '' ?>">
+                                <a class="page-link" href="?page=<?= $noticePage + 1 ?>" aria-label="Berikutnya">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
     </section>
 

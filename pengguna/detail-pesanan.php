@@ -304,7 +304,7 @@ require_once __DIR__ . '/includes/header.php';
                 <i class="bi bi-arrow-left me-1"></i> Riwayat
             </a>
             <button type="button" onclick="window.print()" class="btn-cuciku">
-                <i class="bi bi-printer me-1"></i> Cetak Nota
+                <i class="bi bi-printer me-1"></i> Cetak Struk
             </button>
         </div>
     </div>

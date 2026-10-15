@@ -414,7 +414,7 @@ require __DIR__ . '/includes/header.php';
                 </a>
                 <button type="button" class="btn btn-outline-secondary"
                         onclick="window.print()">
-                    <i class="bi bi-printer me-1"></i> Cetak Nota
+                    <i class="bi bi-printer me-1"></i> Cetak Struk
                 </button>
             </div>
         </section>

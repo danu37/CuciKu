@@ -67,7 +67,7 @@ $stmt->execute($params);
 $pesananList = $stmt->fetchAll();
 
 $totalPesanan = count($pesananList);
-$perPage = 8;
+$perPage = 10;
 $totalPages = max(1, (int) ceil($totalPesanan / $perPage));
 $page = max(1, min($totalPages, (int) ($_GET['page'] ?? 1)));
 $pagePesanan = array_slice($pesananList, ($page - 1) * $perPage, $perPage);
@@ -559,7 +559,7 @@ require_once __DIR__ . '/includes/header.php';
 
             <div class="riwayat-pagination">
                 <span>
-                    Menampilkan <?= count($pagePesanan) ?> dari <?= $totalPesanan ?> pesanan
+                    Menampilkan <strong><?= $totalPesanan > 0 ? (($page - 1) * $perPage + 1) : 0 ?></strong> – <strong><?= min($totalPesanan, $page * $perPage) ?></strong> dari <strong><?= $totalPesanan ?></strong> pesanan (10 per halaman)
                 </span>
 
                 <?php if ($totalPages > 1): ?>

@@ -51,6 +51,39 @@ function antreanE($value)
     return e($value);
 }
 
+function antreanUrl(array $changes = []): string
+{
+    global $query, $statusFilter, $pembayaranFilter, $sort, $order, $page;
+
+    $params = [];
+    if (!empty($query)) {
+        $params['q'] = $query;
+    }
+    if (!empty($statusFilter) && $statusFilter !== 'all') {
+        $params['status'] = $statusFilter;
+    }
+    if (!empty($pembayaranFilter) && $pembayaranFilter !== 'all') {
+        $params['pembayaran'] = $pembayaranFilter;
+    }
+    if (!empty($sort)) {
+        $params['sort'] = $sort;
+        $params['order'] = $order ?: 'desc';
+    }
+    if (!empty($page) && (int)$page > 1) {
+        $params['page'] = (int)$page;
+    }
+
+    foreach ($changes as $k => $v) {
+        if ($v === null || $v === '' || $v === 'all' || ($k === 'page' && (int)$v <= 1)) {
+            unset($params[$k]);
+        } else {
+            $params[$k] = $v;
+        }
+    }
+
+    return 'antrean.php' . (!empty($params) ? '?' . http_build_query($params) : '');
+}
+
 /* =========================
    TAMBAH DAN EDIT TRANSAKSI
 ========================= */
@@ -470,9 +503,30 @@ if (
     $statusFilter = 'all';
 }
 
+$pembayaranFilter = trim($_GET['pembayaran'] ?? ($_GET['bayar'] ?? 'all'));
+if ($pembayaranFilter === 'belum-lunas' || $pembayaranFilter === 'unpaid') {
+    $pembayaranFilter = 'belum_lunas';
+}
+if (!in_array($pembayaranFilter, ['all', 'lunas', 'belum_lunas'], true)) {
+    $pembayaranFilter = 'all';
+}
+
+$allowedSortColumns = [
+    'tanggal_masuk', 'deadline', 'total_biaya', 'berat',
+    'nama_pelanggan', 'status', 'pembayaran', 'kode_transaksi'
+];
+$sort = trim($_GET['sort'] ?? '');
+if (!in_array($sort, $allowedSortColumns, true)) {
+    $sort = '';
+}
+$order = strtolower(trim($_GET['order'] ?? 'desc'));
+if ($order !== 'asc') {
+    $order = 'desc';
+}
+
 $filtered = array_values(array_filter(
     $orders,
-    function ($order) use ($query, $statusFilter) {
+    function ($order) use ($query, $statusFilter, $pembayaranFilter) {
         $matchQuery = $query === ''
             || stripos($order['kode_transaksi'] ?? '', $query) !== false
             || stripos($order['nama_pelanggan'] ?? '', $query) !== false
@@ -481,11 +535,31 @@ $filtered = array_values(array_filter(
         $matchStatus = $statusFilter === 'all'
             || ($order['status'] ?? '') === $statusFilter;
 
-        return $matchQuery && $matchStatus;
+        $matchPembayaran = $pembayaranFilter === 'all'
+            || ($order['pembayaran'] ?? '') === $pembayaranFilter;
+
+        return $matchQuery && $matchStatus && $matchPembayaran;
     }
 ));
 
-$perPage = 8;
+if ($sort !== '') {
+    usort($filtered, function ($a, $b) use ($sort, $order) {
+        $valA = $a[$sort] ?? '';
+        $valB = $b[$sort] ?? '';
+
+        if (in_array($sort, ['total_biaya', 'berat', 'id', 'tarif_per_kg'], true)) {
+            $cmp = ((float)$valA <=> (float)$valB);
+        } elseif (in_array($sort, ['tanggal_masuk', 'deadline', 'created_at'], true)) {
+            $cmp = strtotime((string)$valA) <=> strtotime((string)$valB);
+        } else {
+            $cmp = strcasecmp((string)$valA, (string)$valB);
+        }
+
+        return $order === 'asc' ? $cmp : -$cmp;
+    });
+}
+
+$perPage = 10;
 $totalFiltered = count($filtered);
 $totalPages = max(1, (int)ceil($totalFiltered / $perPage));
 $page = max(1, min($totalPages, (int)($_GET['page'] ?? 1)));
@@ -501,6 +575,8 @@ $waitingCount = 0;
 $processCount = 0;
 $readyCount = 0;
 $completedCount = 0;
+$lunasCount = 0;
+$belumLunasCount = 0;
 
 foreach ($orders as $order) {
     if (($order['status'] ?? '') === 'waiting') {
@@ -515,6 +591,12 @@ foreach ($orders as $order) {
         $readyCount++;
     } elseif (($order['status'] ?? '') === 'completed') {
         $completedCount++;
+    }
+
+    if (($order['pembayaran'] ?? '') === 'lunas') {
+        $lunasCount++;
+    } else {
+        $belumLunasCount++;
     }
 }
 
@@ -535,9 +617,14 @@ if ($modal === 'edit' && $editCode !== '') {
     }
 }
 
+$customerIdParam = isset($_GET['customer_id']) ? (int)$_GET['customer_id'] : 0;
 $addPost = ($modalError['action'] ?? '') === 'add_order'
     ? ($modalError['post'] ?? [])
     : [];
+
+if (empty($addPost['pelanggan_id']) && $customerIdParam > 0) {
+    $addPost['pelanggan_id'] = $customerIdParam;
+}
 
 $editPost = ($modalError['action'] ?? '') === 'edit_order'
     ? ($modalError['post'] ?? [])
@@ -764,6 +851,154 @@ require __DIR__ . '/../includes/header.php';
 .queue-filters .queue-reset-btn:hover {
     background: #e6ebf3;
     color: #172033;
+}
+.queue-filters .queue-payment-select {
+    width: 175px;
+}
+.queue-subbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px 20px;
+    background: #fafbfd;
+    border-bottom: 1px solid #edf0f6;
+}
+.queue-pay-segmented {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.queue-segmented-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #637085;
+    display: inline-flex;
+    align-items: center;
+}
+.queue-segmented-group {
+    display: inline-flex;
+    background: #edf1f7;
+    padding: 3px;
+    border-radius: 10px;
+    gap: 3px;
+}
+.queue-seg-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #556277;
+    text-decoration: none;
+    transition: all .15s ease;
+    border: 1px solid transparent;
+}
+.queue-seg-btn:hover {
+    color: #172033;
+    background: rgba(255, 255, 255, 0.7);
+}
+.queue-seg-btn.active {
+    background: #ffffff;
+    color: var(--brand, #267b72);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    border-color: #e2e8f0;
+}
+.queue-seg-btn.is-lunas.active {
+    color: #047857;
+    background: #ffffff;
+}
+.queue-seg-btn.is-unpaid.active {
+    color: #c2410c;
+    background: #ffffff;
+}
+.queue-seg-btn .seg-badge {
+    display: inline-block;
+    padding: 1px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 12px;
+    background: #e2e8f0;
+    color: #475569;
+}
+.queue-seg-btn.active .seg-badge {
+    background: var(--brand-light, #e7f5f2);
+    color: var(--brand, #267b72);
+}
+.queue-seg-btn.is-lunas.active .seg-badge {
+    background: #d1fae5;
+    color: #047857;
+}
+.queue-seg-btn.is-unpaid.active .seg-badge {
+    background: #ffedd5;
+    color: #c2410c;
+}
+
+.queue-active-filters {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+}
+.filter-chip a {
+    color: #64748b;
+    text-decoration: none;
+    font-size: 13px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+.filter-chip a:hover {
+    color: #ef4444;
+}
+.filter-chip.chip-lunas {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #a7f3d0;
+}
+.filter-chip.chip-unpaid {
+    background: #fff7ed;
+    color: #c2410c;
+    border-color: #fed7aa;
+}
+
+.sort-header {
+    color: inherit;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color .15s ease;
+}
+.sort-header:hover {
+    color: var(--brand, #267b72);
+}
+.sort-header.active-sort {
+    color: var(--brand, #267b72);
+    font-weight: 700;
+}
+.sort-header i {
+    font-size: 11px;
+    opacity: 0.6;
+}
+.sort-header.active-sort i {
+    opacity: 1;
 }
 .queue-form input,
 .queue-form select {
@@ -1326,7 +1561,12 @@ require __DIR__ . '/../includes/header.php';
     .queue-stat strong { font-size: 22px; }
     .queue-search-group { width: 100%; }
     .queue-filters .queue-status-select { width: 100%; }
+    .queue-filters .queue-payment-select { width: 100%; }
     .queue-filters { width: 100%; }
+    .queue-subbar { padding: 10px 14px; }
+    .queue-pay-segmented { width: 100%; }
+    .queue-segmented-group { width: 100%; display: flex; }
+    .queue-seg-btn { flex: 1; justify-content: center; padding: 6px 8px; font-size: 11.5px; }
 }
 </style>
 
@@ -1389,6 +1629,11 @@ require __DIR__ . '/../includes/header.php';
             <h2>Daftar Antrean</h2>
 
             <form class="queue-filters" method="GET" action="antrean.php">
+                <?php if ($sort !== ''): ?>
+                    <input type="hidden" name="sort" value="<?= antreanE($sort) ?>">
+                    <input type="hidden" name="order" value="<?= antreanE($order) ?>">
+                <?php endif; ?>
+
                 <div class="queue-search-group">
                     <i class="bi bi-search queue-search-icon"></i>
                     <input
@@ -1404,7 +1649,7 @@ require __DIR__ . '/../includes/header.php';
                     </button>
                 </div>
 
-                <select name="status" class="queue-status-select" onchange="this.form.submit()">
+                <select name="status" class="queue-status-select" onchange="this.form.submit()" title="Filter status pesanan">
                     <option value="all" <?= $statusFilter === 'all' ? 'selected' : '' ?>>
                         Semua Status
                     </option>
@@ -1418,7 +1663,19 @@ require __DIR__ . '/../includes/header.php';
                     <?php endforeach; ?>
                 </select>
 
-                <?php if ($query !== '' || $statusFilter !== 'all'): ?>
+                <select name="pembayaran" class="queue-status-select queue-payment-select" onchange="this.form.submit()" title="Filter status pembayaran">
+                    <option value="all" <?= $pembayaranFilter === 'all' ? 'selected' : '' ?>>
+                        Semua Pembayaran
+                    </option>
+                    <option value="lunas" <?= $pembayaranFilter === 'lunas' ? 'selected' : '' ?>>
+                        Lunas (<?= $lunasCount ?>)
+                    </option>
+                    <option value="belum_lunas" <?= $pembayaranFilter === 'belum_lunas' ? 'selected' : '' ?>>
+                        Belum Lunas (<?= $belumLunasCount ?>)
+                    </option>
+                </select>
+
+                <?php if ($query !== '' || $statusFilter !== 'all' || $pembayaranFilter !== 'all' || $sort !== ''): ?>
                     <a class="queue-reset-btn" href="antrean.php" title="Reset filter antrean">
                         <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
                     </a>
@@ -1426,27 +1683,126 @@ require __DIR__ . '/../includes/header.php';
             </form>
         </div>
 
+        <div class="queue-subbar">
+            <div class="queue-pay-segmented">
+                <span class="queue-segmented-title">
+                    <i class="bi bi-cash-stack me-1"></i>Status Bayar:
+                </span>
+                <div class="queue-segmented-group">
+                    <a href="<?= antreanUrl(['pembayaran' => 'all', 'page' => 1]) ?>"
+                       class="queue-seg-btn <?= $pembayaranFilter === 'all' ? 'active' : '' ?>">
+                        Semua
+                        <span class="seg-badge"><?= $totalOrders ?></span>
+                    </a>
+                    <a href="<?= antreanUrl(['pembayaran' => 'lunas', 'page' => 1]) ?>"
+                       class="queue-seg-btn is-lunas <?= $pembayaranFilter === 'lunas' ? 'active' : '' ?>">
+                        <i class="bi bi-check-circle-fill"></i> Lunas
+                        <span class="seg-badge"><?= $lunasCount ?></span>
+                    </a>
+                    <a href="<?= antreanUrl(['pembayaran' => 'belum_lunas', 'page' => 1]) ?>"
+                       class="queue-seg-btn is-unpaid <?= $pembayaranFilter === 'belum_lunas' ? 'active' : '' ?>">
+                        <i class="bi bi-exclamation-circle-fill"></i> Belum Lunas
+                        <span class="seg-badge"><?= $belumLunasCount ?></span>
+                    </a>
+                </div>
+            </div>
+
+            <?php if ($query !== '' || $statusFilter !== 'all' || $pembayaranFilter !== 'all' || $sort !== ''): ?>
+            <div class="queue-active-filters">
+                <span class="text-muted small me-1">Filter aktif:</span>
+                <?php if ($query !== ''): ?>
+                    <span class="filter-chip">
+                        Cari: "<?= antreanE($query) ?>"
+                        <a href="<?= antreanUrl(['q' => '', 'page' => 1]) ?>" title="Hapus filter pencarian"><i class="bi bi-x"></i></a>
+                    </span>
+                <?php endif; ?>
+                <?php if ($statusFilter !== 'all'): ?>
+                    <span class="filter-chip">
+                        Status: <?= antreanE($statusLabels[$statusFilter] ?? $statusFilter) ?>
+                        <a href="<?= antreanUrl(['status' => 'all', 'page' => 1]) ?>" title="Hapus filter status"><i class="bi bi-x"></i></a>
+                    </span>
+                <?php endif; ?>
+                <?php if ($pembayaranFilter !== 'all'): ?>
+                    <span class="filter-chip <?= $pembayaranFilter === 'lunas' ? 'chip-lunas' : 'chip-unpaid' ?>">
+                        Bayar: <?= $pembayaranFilter === 'lunas' ? 'Lunas' : 'Belum Lunas' ?>
+                        <a href="<?= antreanUrl(['pembayaran' => 'all', 'page' => 1]) ?>" title="Hapus filter pembayaran"><i class="bi bi-x"></i></a>
+                    </span>
+                <?php endif; ?>
+                <?php if ($sort !== ''): ?>
+                    <span class="filter-chip">
+                        Urut: <?= antreanE($sort) ?> (<?= strtoupper($order) ?>)
+                        <a href="<?= antreanUrl(['sort' => '', 'order' => '', 'page' => 1]) ?>" title="Reset urutan"><i class="bi bi-x"></i></a>
+                    </span>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+        </div>
+
         <div class="queue-table-wrap">
             <table class="queue-table">
                 <thead>
                     <tr>
-                        <th>Kode / Pelanggan</th>
+                        <th>
+                            <a href="<?= antreanUrl(['sort' => 'nama_pelanggan', 'order' => ($sort === 'nama_pelanggan' && $order === 'asc' ? 'desc' : 'asc'), 'page' => 1]) ?>" class="sort-header <?= $sort === 'nama_pelanggan' ? 'active-sort' : '' ?>" title="Urutkan berdasarkan pelanggan">
+                                Kode / Pelanggan
+                                <i class="bi <?= $sort === 'nama_pelanggan' ? ($order === 'asc' ? 'bi-sort-alpha-down' : 'bi-sort-alpha-up-alt') : 'bi-arrow-down-up' ?>"></i>
+                            </a>
+                        </th>
                         <th>Paket</th>
-                        <th>Berat</th>
-                        <th>Tanggal Masuk</th>
-                        <th>Deadline</th>
-                        <th>Total</th>
-                        <th style="min-width: 145px;">Status</th>
-                        <th style="min-width: 140px;">Pembayaran</th>
+                        <th>
+                            <a href="<?= antreanUrl(['sort' => 'berat', 'order' => ($sort === 'berat' && $order === 'asc' ? 'desc' : 'asc'), 'page' => 1]) ?>" class="sort-header <?= $sort === 'berat' ? 'active-sort' : '' ?>" title="Urutkan berdasarkan berat">
+                                Berat
+                                <i class="bi <?= $sort === 'berat' ? ($order === 'asc' ? 'bi-sort-numeric-down' : 'bi-sort-numeric-up-alt') : 'bi-arrow-down-up' ?>"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="<?= antreanUrl(['sort' => 'tanggal_masuk', 'order' => ($sort === 'tanggal_masuk' && $order === 'asc' ? 'desc' : 'asc'), 'page' => 1]) ?>" class="sort-header <?= $sort === 'tanggal_masuk' ? 'active-sort' : '' ?>" title="Urutkan berdasarkan tanggal masuk">
+                                Tanggal Masuk
+                                <i class="bi <?= $sort === 'tanggal_masuk' ? ($order === 'asc' ? 'bi-sort-down' : 'bi-sort-up-alt') : 'bi-arrow-down-up' ?>"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="<?= antreanUrl(['sort' => 'deadline', 'order' => ($sort === 'deadline' && $order === 'asc' ? 'desc' : 'asc'), 'page' => 1]) ?>" class="sort-header <?= $sort === 'deadline' ? 'active-sort' : '' ?>" title="Urutkan berdasarkan deadline">
+                                Deadline
+                                <i class="bi <?= $sort === 'deadline' ? ($order === 'asc' ? 'bi-sort-down' : 'bi-sort-up-alt') : 'bi-arrow-down-up' ?>"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="<?= antreanUrl(['sort' => 'total_biaya', 'order' => ($sort === 'total_biaya' && $order === 'asc' ? 'desc' : 'asc'), 'page' => 1]) ?>" class="sort-header <?= $sort === 'total_biaya' ? 'active-sort' : '' ?>" title="Urutkan berdasarkan total biaya">
+                                Total
+                                <i class="bi <?= $sort === 'total_biaya' ? ($order === 'asc' ? 'bi-sort-numeric-down' : 'bi-sort-numeric-up-alt') : 'bi-arrow-down-up' ?>"></i>
+                            </a>
+                        </th>
+                        <th style="min-width: 145px;">
+                            <a href="<?= antreanUrl(['sort' => 'status', 'order' => ($sort === 'status' && $order === 'asc' ? 'desc' : 'asc'), 'page' => 1]) ?>" class="sort-header <?= $sort === 'status' ? 'active-sort' : '' ?>" title="Urutkan berdasarkan status order">
+                                Status
+                                <i class="bi <?= $sort === 'status' ? ($order === 'asc' ? 'bi-sort-down' : 'bi-sort-up-alt') : 'bi-arrow-down-up' ?>"></i>
+                            </a>
+                        </th>
+                        <th style="min-width: 140px;">
+                            <a href="<?= antreanUrl(['sort' => 'pembayaran', 'order' => ($sort === 'pembayaran' && $order === 'asc' ? 'desc' : 'asc'), 'page' => 1]) ?>" class="sort-header <?= $sort === 'pembayaran' ? 'active-sort' : '' ?>" title="Urutkan berdasarkan status pembayaran">
+                                Pembayaran
+                                <i class="bi <?= $sort === 'pembayaran' ? ($order === 'asc' ? 'bi-sort-down' : 'bi-sort-up-alt') : 'bi-arrow-down-up' ?>"></i>
+                            </a>
+                        </th>
                         <th style="min-width: 135px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (!$pageOrders): ?>
                         <tr>
-                            <td class="queue-empty" colspan="9">
-                                <i class="bi bi-inbox fs-2 text-muted d-block mb-2"></i>
-                                Belum ada transaksi yang sesuai.
+                            <td class="queue-empty text-center py-5" colspan="9">
+                                <i class="bi bi-inbox fs-1 text-muted d-block mb-2 opacity-50"></i>
+                                <?php if ($query !== '' || $statusFilter !== 'all' || $pembayaranFilter !== 'all'): ?>
+                                    <strong class="d-block text-dark fs-6 mb-1">Tidak ada transaksi yang cocok</strong>
+                                    <span class="text-muted small d-block mb-3">Tidak ditemukan data dengan kriteria filter saat ini.</span>
+                                    <a href="antrean.php" class="btn btn-sm btn-outline-brand">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Semua Filter
+                                    </a>
+                                <?php else: ?>
+                                    <strong class="d-block text-dark fs-6 mb-1">Belum Ada Transaksi</strong>
+                                    <span class="text-muted small">Belum ada data transaksi yang tercatat di sistem.</span>
+                                <?php endif; ?>
                             </td>
                         </tr>
                     <?php else: ?>
@@ -1586,13 +1942,13 @@ require __DIR__ . '/../includes/header.php';
 
         <div class="queue-pagination">
             <span>
-                Menampilkan <?= count($pageOrders) ?> dari <?= $totalFiltered ?> transaksi
+                Menampilkan <strong><?= $totalFiltered > 0 ? (($page - 1) * $perPage + 1) : 0 ?></strong> – <strong><?= min($totalFiltered, $page * $perPage) ?></strong> dari <strong><?= $totalFiltered ?></strong> transaksi (10 per halaman)
             </span>
 
             <?php if ($totalPages > 1): ?>
                 <div class="queue-pages">
                     <?php if ($page > 1): ?>
-                        <a href="?q=<?= urlencode($query) ?>&amp;status=<?= urlencode($statusFilter) ?>&amp;page=<?= $page - 1 ?>">
+                        <a href="<?= antreanUrl(['page' => $page - 1]) ?>">
                             Sebelumnya
                         </a>
                     <?php endif; ?>
@@ -1601,7 +1957,7 @@ require __DIR__ . '/../includes/header.php';
                     $startPage = max(1, $page - 2);
                     $endPage = min($totalPages, $page + 2);
                     if ($startPage > 1): ?>
-                        <a href="?q=<?= urlencode($query) ?>&amp;status=<?= urlencode($statusFilter) ?>&amp;page=1">1</a>
+                        <a href="<?= antreanUrl(['page' => 1]) ?>">1</a>
                         <?php if ($startPage > 2): ?><span>…</span><?php endif; ?>
                     <?php endif; ?>
 
@@ -1609,7 +1965,7 @@ require __DIR__ . '/../includes/header.php';
                         <?php if ($i === $page): ?>
                             <span class="active"><?= $i ?></span>
                         <?php else: ?>
-                            <a href="?q=<?= urlencode($query) ?>&amp;status=<?= urlencode($statusFilter) ?>&amp;page=<?= $i ?>">
+                            <a href="<?= antreanUrl(['page' => $i]) ?>">
                                 <?= $i ?>
                             </a>
                         <?php endif; ?>
@@ -1617,11 +1973,11 @@ require __DIR__ . '/../includes/header.php';
 
                     <?php if ($endPage < $totalPages): ?>
                         <?php if ($endPage < $totalPages - 1): ?><span>…</span><?php endif; ?>
-                        <a href="?q=<?= urlencode($query) ?>&amp;status=<?= urlencode($statusFilter) ?>&amp;page=<?= $totalPages ?>"><?= $totalPages ?></a>
+                        <a href="<?= antreanUrl(['page' => $totalPages]) ?>"><?= $totalPages ?></a>
                     <?php endif; ?>
 
                     <?php if ($page < $totalPages): ?>
-                        <a href="?q=<?= urlencode($query) ?>&amp;status=<?= urlencode($statusFilter) ?>&amp;page=<?= $page + 1 ?>">
+                        <a href="<?= antreanUrl(['page' => $page + 1]) ?>">
                             Berikutnya
                         </a>
                     <?php endif; ?>
@@ -1632,7 +1988,7 @@ require __DIR__ . '/../includes/header.php';
 </div>
 
 <?php
-$isAddModal = ($modal === 'add') || (!empty($addPost) && !empty($modalError['errors']));
+$isAddModal = ($modal === 'add') || (!empty($addPost) && !empty($modalError['errors'])) || ($customerIdParam > 0);
 $isEditModal = ($modal === 'edit' && $editOrder !== null);
 
 // Data untuk Edit Modal

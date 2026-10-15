@@ -65,6 +65,13 @@ if ($query !== '') {
     }
 }
 
+// Pagination hasil pencarian (10 per halaman)
+$perPage = 10;
+$totalMatches = count($matches);
+$totalPages = max(1, (int) ceil($totalMatches / $perPage));
+$page = max(1, min($totalPages, (int) ($_GET['page'] ?? 1)));
+$pageMatches = array_slice($matches, ($page - 1) * $perPage, $perPage);
+
 // Ambil detail struk jika kode transaksi dipilih
 $selectedCode = trim($_GET['code'] ?? '');
 if ($selectedCode !== '') {
@@ -167,7 +174,7 @@ require __DIR__ . '/../includes/header.php';
                     </tr>
                     </thead>
                     <tbody>
-                    <?php foreach ($matches as $order): ?>
+                    <?php foreach ($pageMatches as $order): ?>
                         <tr>
                             <td>
                                 <span class="order-code"><?= e($order['code']) ?></span>
@@ -206,6 +213,35 @@ require __DIR__ . '/../includes/header.php';
                     </tbody>
                 </table>
             </div>
+
+            <?php if ($totalMatches > 0): ?>
+                <div class="d-flex justify-content-between align-items-center p-3 border-top flex-wrap gap-2 bg-light">
+                    <span class="text-muted small">
+                        Menampilkan <strong><?= (($page - 1) * $perPage + 1) ?></strong> – <strong><?= min($totalMatches, $page * $perPage) ?></strong> dari <strong><?= $totalMatches ?></strong> transaksi (10 per halaman)
+                    </span>
+                    <?php if ($totalPages > 1): ?>
+                        <nav aria-label="Navigasi halaman struk">
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item <?= ($page <= 1) ? 'disabled' : '' ?>">
+                                    <a class="page-link" href="?q=<?= urlencode($query) ?>&amp;page=<?= $page - 1 ?>"><i class="bi bi-chevron-left"></i></a>
+                                </li>
+                                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                                    <?php if ($i === 1 || $i === $totalPages || ($i >= $page - 2 && $i <= $page + 2)): ?>
+                                        <li class="page-item <?= ($i === $page) ? 'active' : '' ?>">
+                                            <a class="page-link" href="?q=<?= urlencode($query) ?>&amp;page=<?= $i ?>"><?= $i ?></a>
+                                        </li>
+                                    <?php elseif ($i === $page - 3 || $i === $page + 3): ?>
+                                        <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                                    <?php endif; ?>
+                                <?php endfor; ?>
+                                <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : '' ?>">
+                                    <a class="page-link" href="?q=<?= urlencode($query) ?>&amp;page=<?= $page + 1 ?>"><i class="bi bi-chevron-right"></i></a>
+                                </li>
+                            </ul>
+                        </nav>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
     <?php else: ?>
         <div class="notification-empty">
