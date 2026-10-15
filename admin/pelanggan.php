@@ -108,12 +108,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $alamat !== '' ? $alamat : null
                 ]);
 
-                flash("Pelanggan baru '{$nama}' berhasil ditambahkan ke sistem.");
+                flash("Pelanggan baru '{$nama}' berhasil ditambahkan ke sistem.", 'success', 'Pelanggan Ditambahkan');
                 header('Location: pelanggan.php');
                 exit;
             } catch (PDOException $e) {
                 error_log('Gagal menambah pelanggan: ' . $e->getMessage());
-                $errors[] = 'Gagal menyimpan pelanggan: ' . $e->getMessage();
+                if ($e->getCode() === '23000' || ($e->errorInfo[1] ?? 0) == 1062) {
+                    if (stripos($e->getMessage(), 'no_hp') !== false) {
+                        $errors[] = "Nomor WhatsApp / HP '{$no_hp}' sudah terdaftar pada pelanggan lain.";
+                    } else {
+                        $errors[] = "Email '{$email}' sudah terdaftar pada pelanggan lain.";
+                    }
+                } else {
+                    $errors[] = 'Gagal menyimpan pelanggan: ' . $e->getMessage();
+                }
             }
         }
 
@@ -123,6 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'errors' => $errors,
             'post'   => $_POST
         ];
+        flash($errors, 'danger', 'Gagal Menambah Pelanggan');
 
         header('Location: pelanggan.php?modal=add');
         exit;
@@ -232,12 +241,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $updateStmt->execute([$nama, $no_hp, $email, $alamat !== '' ? $alamat : null, $id_pelanggan]);
                 }
 
-                flash("Data pelanggan '{$nama}' berhasil diperbarui.");
+                flash("Data pelanggan '{$nama}' berhasil diperbarui.", 'success', 'Pelanggan Diperbarui');
                 header('Location: pelanggan.php');
                 exit;
             } catch (PDOException $e) {
                 error_log('Gagal memperbarui pelanggan: ' . $e->getMessage());
-                $errors[] = 'Gagal menyimpan perubahan: ' . $e->getMessage();
+                if ($e->getCode() === '23000' || ($e->errorInfo[1] ?? 0) == 1062) {
+                    if (stripos($e->getMessage(), 'no_hp') !== false) {
+                        $errors[] = "Nomor WhatsApp / HP '{$no_hp}' sudah digunakan oleh pelanggan lain.";
+                    } else {
+                        $errors[] = "Email '{$email}' sudah digunakan oleh pelanggan lain.";
+                    }
+                } else {
+                    $errors[] = 'Gagal menyimpan perubahan: ' . $e->getMessage();
+                }
             }
         }
 
@@ -246,6 +263,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'errors' => $errors,
             'post'   => $_POST
         ];
+        flash($errors, 'danger', 'Gagal Memperbarui Pelanggan');
 
         header('Location: pelanggan.php?modal=edit&id=' . $id_pelanggan);
         exit;
@@ -258,7 +276,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id_pelanggan = (int)($_POST['id_pelanggan'] ?? 0);
 
         if ($id_pelanggan <= 0) {
-            flash('ID pelanggan tidak valid.', 'danger');
+            flash('ID pelanggan tidak valid.', 'danger', 'Gagal Menghapus');
             header('Location: pelanggan.php');
             exit;
         }
@@ -269,7 +287,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $cust = $stmtFind->fetch(PDO::FETCH_ASSOC);
 
         if (!$cust) {
-            flash('Pelanggan tidak ditemukan.', 'danger');
+            flash('Pelanggan tidak ditemukan.', 'danger', 'Gagal Menghapus');
             header('Location: pelanggan.php');
             exit;
         }
@@ -278,7 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Cegah admin menghapus akun dengan email admin sendiri jika terhubung
         $currentAdminUser = $_SESSION['admin_username'] ?? '';
         if ($currentAdminUser !== '' && strcasecmp($cust['email'], $currentAdminUser) === 0) {
-            flash('Akses ditolak: Anda tidak dapat menghapus akun Anda sendiri.', 'danger');
+            flash('Akses ditolak: Anda tidak dapat menghapus akun Anda sendiri.', 'danger', 'Akses Ditolak');
             header('Location: pelanggan.php');
             exit;
         }
@@ -296,10 +314,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $delStmt->execute([$id_pelanggan]);
 
             $transInfo = $transCount > 0 ? " ({$transCount} riwayat transaksi diarsipkan)" : '';
-            flash("Pelanggan '{$cust['nama']}' berhasil dihapus{$transInfo}.");
+            flash("Pelanggan '{$cust['nama']}' berhasil dihapus{$transInfo}.", 'success', 'Pelanggan Dihapus');
         } catch (PDOException $e) {
             error_log('Gagal menghapus pelanggan: ' . $e->getMessage());
-            flash('Gagal menghapus pelanggan: ' . $e->getMessage(), 'danger');
+            flash('Gagal menghapus pelanggan: ' . $e->getMessage(), 'danger', 'Gagal Menghapus');
         }
 
         header('Location: pelanggan.php');
@@ -995,11 +1013,6 @@ require __DIR__ . '/../includes/header.php';
             <i class="bi bi-person-plus-fill fs-6"></i> Tambah Pelanggan
         </button>
     </div>
-
-    <!-- Flash Pesan Notifikasi -->
-    <?php if (function_exists('showFlash')): ?>
-        <?php showFlash(); ?>
-    <?php endif; ?>
 
     <!-- Alert Kesalahan Modal -->
     <?php if ($modalError && !empty($modalError['errors'])): ?>

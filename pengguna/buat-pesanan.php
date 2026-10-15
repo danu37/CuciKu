@@ -104,8 +104,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $berat = (float) $beratInput;
 
-            if ($berat <= 0 || $berat > 1000) {
-                $pesanError = 'Berat harus lebih dari 0 kg dan maksimal 1000 kg.';
+            if ($berat <= 0 || $berat > 25) {
+                $pesanError = 'Berat harus lebih dari 0 kg dan maksimal 25 kg.';
             } elseif (strlen($beratInput) > 10) {
                 $pesanError = 'Format berat tidak valid.';
             } else {
@@ -194,6 +194,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     // Ganti token setelah pesanan berhasil dibuat.
                     $_SESSION['csrf_pesanan'] = bin2hex(random_bytes(32));
+
+                    flash("Pesanan #{$kodeTransaksi} berhasil dibuat! Berat: {$berat} kg, Total: " . formatRupiah($totalBiaya), 'success', 'Pesanan Berhasil');
 
                     // Redirect agar refresh tidak mengirim formulir lagi.
                     header(
@@ -353,6 +355,13 @@ require __DIR__ . '/includes/header.php';
     </section>
 
     <?php if ($pesanError !== ''): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                if (typeof window.createAppToast === 'function') {
+                    window.createAppToast(<?= json_encode($pesanError) ?>, 'danger', 'Validasi Gagal');
+                }
+            });
+        </script>
         <div class="alert alert-danger"><?= h($pesanError) ?></div>
     <?php endif; ?>
 
@@ -450,9 +459,9 @@ require __DIR__ . '/includes/header.php';
                 <div class="mb-4">
                     <label for="berat" class="form-label">Berat Pakaian (kg)</label>
                     <input type="number" name="berat" id="berat"
-                           class="form-control" min="0.1" max="1000"
-                           step="0.1" placeholder="Contoh: 3.5" required>
-                    <small class="text-secondary">Masukkan berat sesuai timbangan. Berat akhir dapat diverifikasi petugas.</small>
+                           class="form-control" min="0.1" max="25"
+                           step="0.1" placeholder="Contoh: 3.5 (maks. 25 kg)" required>
+                    <small class="text-secondary">Masukkan berat sesuai timbangan (maksimal 25 kg). Berat akhir dapat diverifikasi petugas.</small>
                 </div>
 
                 <div class="total-box mb-4">

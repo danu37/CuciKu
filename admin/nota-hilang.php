@@ -159,6 +159,13 @@ require __DIR__ . '/../includes/header.php';
                 <strong>Struk tidak ditemukan</strong>
                 <span>Periksa kembali kode transaksi atau nama pelanggan.</span>
             </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (typeof window.createAppToast === 'function') {
+                        window.createAppToast('Tidak ditemukan transaksi dengan kata kunci "' + <?= json_encode($query) ?> + '".', 'warning', 'Pencarian Nihil');
+                    }
+                });
+            </script>
         <?php else: ?>
             <div class="table-responsive">
                 <table class="table orders-table align-middle mb-0">

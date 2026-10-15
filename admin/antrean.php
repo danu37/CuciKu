@@ -110,9 +110,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 $update->execute([$newPayment, $transaksi['id']]);
 
                 $label = ($newPayment === 'lunas') ? 'Lunas' : 'Belum Lunas';
-                flash("Status pembayaran transaksi {$code} berhasil diubah menjadi {$label}.");
+                flash("Status pembayaran transaksi {$code} berhasil diubah menjadi {$label}.", 'success', 'Pembayaran Diperbarui');
             } else {
-                flash('Transaksi tidak ditemukan.', 'danger');
+                flash('Transaksi tidak ditemukan.', 'danger', 'Gagal Memperbarui');
             }
         }
 
@@ -174,12 +174,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
                 $statusText = $statusLabels[$newStatus] ?? $newStatus;
                 if ($newStatus === 'ready') {
-                    flash("Orderan {$code} telah selesai diproses dan otomatis diubah menjadi Siap Diambil.");
+                    flash("Orderan {$code} telah selesai diproses dan otomatis diubah menjadi Siap Diambil.", 'success', 'Status Berhasil Diubah');
+                } elseif ($newStatus === 'completed') {
+                    flash("Status transaksi {$code} berhasil diselesaikan.", 'success', 'Transaksi Selesai');
+                } elseif ($newStatus === 'cancelled') {
+                    flash("Transaksi {$code} berhasil dibatalkan.", 'warning', 'Pesanan Dibatalkan');
                 } else {
-                    flash("Status transaksi {$code} berhasil diubah menjadi {$statusText}.");
+                    flash("Status transaksi {$code} berhasil diubah menjadi {$statusText}.", 'success', 'Status Berhasil Diubah');
                 }
             } else {
-                flash('Transaksi tidak ditemukan.', 'danger');
+                flash('Transaksi tidak ditemukan.', 'danger', 'Gagal Mengubah Status');
             }
         }
 
@@ -214,16 +218,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                     $delStmt->execute([$transaksi['id']]);
 
                     $pdo->commit();
-                    flash("Transaksi {$code} atas nama {$transaksi['nama_pelanggan']} berhasil dihapus.");
+                    flash("Transaksi {$code} atas nama {$transaksi['nama_pelanggan']} berhasil dihapus.", 'success', 'Transaksi Dihapus');
                 } catch (Throwable $e) {
                     if ($pdo->inTransaction()) {
                         $pdo->rollBack();
                     }
                     error_log($e->getMessage());
-                    flash('Gagal menghapus transaksi: ' . $e->getMessage(), 'danger');
+                    flash('Gagal menghapus transaksi: ' . $e->getMessage(), 'danger', 'Gagal Menghapus Transaksi');
                 }
             } else {
-                flash('Transaksi tidak ditemukan.', 'danger');
+                flash('Transaksi tidak ditemukan.', 'danger', 'Gagal Menghapus Transaksi');
             }
         }
 
@@ -275,8 +279,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             $errors[] = 'Paket layanan tidak valid.';
         }
 
-        if ($weight <= 0 || $weight > 200) {
-            $errors[] = 'Berat harus lebih dari 0 dan maksimal 200 kg.';
+        if ($weight <= 0 || $weight > 25) {
+            $errors[] = 'Berat harus lebih dari 0 dan maksimal 25 kg.';
         }
 
         if (!$dateObj) {
@@ -389,7 +393,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                     }
 
                     $pdo->commit();
-                    flash('Transaksi ' . $code . ' berhasil ditambahkan.');
+                    flash('Transaksi ' . $code . ' berhasil ditambahkan.', 'success', 'Transaksi Ditambahkan');
                 } else {
                     $pembayaran = $paid ? 'lunas' : 'belum_lunas';
 
@@ -442,7 +446,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                     }
 
                     $pdo->commit();
-                    flash('Transaksi ' . $code . ' berhasil diperbarui.');
+                    if ($status === 'cancelled' && ($oldOrder['status'] ?? '') !== 'cancelled') {
+                        flash("Transaksi {$code} berhasil dibatalkan.", 'warning', 'Pesanan Dibatalkan');
+                    } elseif ($status === 'ready' && ($oldOrder['status'] ?? '') !== 'ready') {
+                        flash("Orderan {$code} telah siap diambil oleh pelanggan.", 'success', 'Siap Diambil');
+                    } else {
+                        flash('Transaksi ' . $code . ' berhasil diperbarui.', 'success', 'Transaksi Diperbarui');
+                    }
                 }
 
                 header('Location: antrean.php');
@@ -463,6 +473,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             'action' => $action,
             'post' => $_POST
         ];
+        flash($errors, 'danger', $action === 'add_order' ? 'Gagal Menambah Transaksi' : 'Gagal Memperbarui Transaksi');
 
         header(
             'Location: antrean.php?modal=' .
@@ -1581,10 +1592,6 @@ require __DIR__ . '/../includes/header.php';
         </button>
     </div>
 
-    <?php if (function_exists('showFlash')): ?>
-        <?php showFlash(); ?>
-    <?php endif; ?>
-
     <?php if ($modalError && !empty($modalError['errors'])): ?>
         <div class="queue-alert">
             <?php foreach ($modalError['errors'] as $error): ?>
@@ -2161,13 +2168,13 @@ if (!empty($addPost['dateIn'])) {
                                     name="weight"
                                     step="0.1"
                                     min="0.1"
-                                    max="200"
+                                    max="25"
                                     required
-                                    placeholder="Contoh: 3.5"
+                                    placeholder="Contoh: 3.5 (maks. 25 kg)"
                                     value="<?= antreanE($addPost['weight'] ?? '') ?>"
                                 >
                                 <span class="input-group-text bg-light text-muted">kg</span>
-                                <div class="invalid-feedback small">Masukkan berat cucian antara 0.1 - 200 kg.</div>
+                                <div class="invalid-feedback small">Masukkan berat cucian antara 0.1 - 25 kg.</div>
                             </div>
                         </div>
 
@@ -2332,11 +2339,12 @@ if (!empty($addPost['dateIn'])) {
                                     name="weight"
                                     step="0.1"
                                     min="0.1"
-                                    max="200"
+                                    max="25"
                                     required
                                     value="<?= antreanE($formEditOrder['berat'] ?? '') ?>"
                                 >
                                 <span class="input-group-text bg-light text-muted">kg</span>
+                                <div class="invalid-feedback small">Masukkan berat cucian antara 0.1 - 25 kg.</div>
                             </div>
                         </div>
 

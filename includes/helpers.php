@@ -95,38 +95,108 @@ function formatTanggal(?string $tanggal): string
 }
 
 /**
- * Simpan pesan flash ke session.
+ * Simpan pesan flash ke session untuk notifikasi toast pop-up.
  *
- * @param string $message Pesan yang ditampilkan.
- * @param string $type    Tipe pesan: 'success', 'warning', 'danger'.
+ * @param string|array $message Pesan yang ditampilkan.
+ * @param string       $type    Tipe pesan: 'success', 'warning', 'danger', 'info'.
+ * @param string       $title   Judul notifikasi opsional.
  */
-function flash(string $message, string $type = 'success'): void
+function flash(string|array $message, string $type = 'success', string $title = ''): void
 {
-    $_SESSION['flash'] = [
-        'message' => $message,
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        session_start();
+    }
+
+    if (!isset($_SESSION['flashes'])) {
+        $_SESSION['flashes'] = [];
+    }
+
+    $msgHtml = is_array($message)
+        ? '<ul class="mb-0 ps-3">' . implode('', array_map(fn($m) => '<li>' . e($m) . '</li>', $message)) . '</ul>'
+        : e($message);
+
+    $toastData = [
+        'message' => $msgHtml,
         'type'    => $type,
+        'title'   => $title
     ];
+
+    $_SESSION['flashes'][] = $toastData;
+    $_SESSION['flash'] = $toastData;
 }
 
 /**
- * Tampilkan pesan flash jika ada, lalu hapus dari session.
+ * Tampilkan pesan flash dalam bentuk Toast Notification modern di kanan atas layar.
  */
 function showFlash(): void
 {
-    if (empty($_SESSION['flash'])) {
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        session_start();
+    }
+
+    $items = [];
+    if (!empty($_SESSION['flashes']) && is_array($_SESSION['flashes'])) {
+        $items = $_SESSION['flashes'];
+        unset($_SESSION['flashes']);
+        unset($_SESSION['flash']);
+    } elseif (!empty($_SESSION['flash']) && is_array($_SESSION['flash'])) {
+        $items = [$_SESSION['flash']];
+        unset($_SESSION['flash']);
+    }
+
+    if (empty($items)) {
         return;
     }
 
-    $flash = $_SESSION['flash'];
-    unset($_SESSION['flash']);
+    $typeIcons = [
+        'success' => 'bi-check-circle-fill',
+        'danger'  => 'bi-x-circle-fill',
+        'error'   => 'bi-x-circle-fill',
+        'warning' => 'bi-exclamation-triangle-fill',
+        'info'    => 'bi-info-circle-fill',
+    ];
 
-    $type = e($flash['type'] ?? 'success');
-    $message = e($flash['message'] ?? '');
+    $typeTitles = [
+        'success' => 'Berhasil',
+        'danger'  => 'Terjadi Kesalahan',
+        'error'   => 'Terjadi Kesalahan',
+        'warning' => 'Peringatan',
+        'info'    => 'Informasi',
+    ];
 
-    echo '<div class="alert alert-' . $type . ' alert-dismissible fade show">'
-       . $message
-       . '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>'
-       . '</div>';
+    echo '<div class="app-toast-container" id="appToastContainer" aria-live="polite" aria-atomic="true">';
+    foreach ($items as $item) {
+        $type = e($item['type'] ?? 'success');
+        if (!isset($typeIcons[$type])) {
+            $type = 'info';
+        }
+        $icon = $typeIcons[$type];
+        $title = !empty($item['title']) ? e($item['title']) : ($typeTitles[$type] ?? 'Notifikasi');
+        $message = $item['message'] ?? '';
+
+        echo '<div class="app-toast app-toast-' . $type . '" role="alert">'
+           . '<div class="app-toast-icon"><i class="bi ' . $icon . '"></i></div>'
+           . '<div class="app-toast-content">'
+           . '<div class="app-toast-title">' . $title . '</div>'
+           . '<div class="app-toast-message">' . $message . '</div>'
+           . '</div>'
+           . '<button type="button" class="app-toast-close" aria-label="Tutup notifikasi"><i class="bi bi-x"></i></button>'
+           . '<div class="app-toast-progress"><div class="app-toast-progress-bar"></div></div>'
+           . '</div>';
+    }
+    echo '</div>';
+
+    echo '<script>
+        if (typeof window.initAppToasts === "function") {
+            window.initAppToasts();
+        } else {
+            document.addEventListener("DOMContentLoaded", function() {
+                if (typeof window.initAppToasts === "function") {
+                    window.initAppToasts();
+                }
+            });
+        }
+    </script>';
 }
 
 /**

@@ -17,9 +17,11 @@ $namaPengguna = $_SESSION['pelanggan_nama'] ?? 'Pelanggan';
 $halamanAktif = $halamanAktif ?? 'dashboard';
 $inisialPengguna = strtoupper(substr($namaPengguna, 0, 1));
 
-function eHeader($nilai)
-{
-    return e($nilai);
+if (!function_exists('eHeader')) {
+    function eHeader($nilai)
+    {
+        return e($nilai);
+    }
 }
 ?>
 <!doctype html>
@@ -256,9 +258,9 @@ function eHeader($nilai)
                     <strong><?= eHeader($namaPengguna) ?></strong>
                     <small>Pelanggan CuciKu</small>
                 </div>
-                <a class="customer-logout" href="../logout.php"
-                   title="Keluar" aria-label="Keluar"
-                   onclick="return confirm('Yakin ingin keluar dari akun?')">
+                <a class="customer-logout" href="#modalKonfirmasiLogout"
+                   data-bs-toggle="modal" data-bs-target="#modalKonfirmasiLogout"
+                   title="Keluar dari akun" aria-label="Keluar">
                     <i class="bi bi-box-arrow-right"></i>
                 </a>
             </div>
@@ -285,8 +287,14 @@ function eHeader($nilai)
                 <div class="topbar-admin">
                     <div class="profile-avatar"><?= eHeader($inisialPengguna) ?></div>
                     <span><?= eHeader($namaPengguna) ?></span>
+                    <a href="#modalKonfirmasiLogout" data-bs-toggle="modal" data-bs-target="#modalKonfirmasiLogout" class="topbar-logout ms-2" title="Keluar dari akun" aria-label="Keluar" style="color: #7a879b; font-size: 1.05rem; display: inline-flex; align-items: center;">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </a>
                 </div>
             </div>
         </header>
 
         <div class="page-content">
+        <?php if (function_exists('showFlash')): ?>
+            <?php showFlash(); ?>
+        <?php endif; ?>

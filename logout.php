@@ -2,7 +2,8 @@
 /**
  * logout.php — Penanganan keluar akun pelanggan dan admin.
  *
- * Menghapus seluruh sesi dan cookie autentikasi secara aman.
+ * Menghapus seluruh sesi dan cookie autentikasi secara aman,
+ * kemudian mengirimkan notifikasi toast info ke halaman login.
  */
 
 $https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
@@ -11,7 +12,9 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
 }
 
-// Hapus seluruh data session
+require_once __DIR__ . '/includes/helpers.php';
+
+// Hapus seluruh data session lama
 $_SESSION = [];
 
 // Hapus cookie session PHP
@@ -40,5 +43,12 @@ setcookie('cuciku_role', '', [
     'samesite' => 'Lax',
 ]);
 
+// Mulai session baru yang bersih untuk menyimpan pesan flash toast logout
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+flash('Anda telah berhasil keluar dari akun. Sampai jumpa kembali!', 'info', 'Logout Berhasil');
+
 header('Location: login.php');
 exit;
+

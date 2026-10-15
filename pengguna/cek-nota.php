@@ -130,6 +130,13 @@ require __DIR__ . '/includes/header.php';
                 <strong>Struk tidak ditemukan</strong>
                 <p>Periksa kembali kode transaksi. Pencarian hanya menampilkan pesanan milik akun kamu.</p>
             </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (typeof window.createAppToast === 'function') {
+                        window.createAppToast('Struk dengan nomor nota tersebut tidak ditemukan atau bukan milik akun Anda.', 'warning', 'Struk Tidak Ditemukan');
+                    }
+                });
+            </script>
         <?php else: ?>
             <?php
             $statusPesanan = $statusList[$pesanan['status']] ?? ucfirst($pesanan['status']);

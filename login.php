@@ -35,6 +35,9 @@ $berhasil = '';
 
 if (isset($_GET['daftar']) && $_GET['daftar'] === 'berhasil') {
     $berhasil = 'Registrasi berhasil! Silakan login menggunakan akun kamu.';
+    if (empty($_SESSION['flashes']) && empty($_SESSION['flash'])) {
+        flash('Registrasi berhasil! Silakan login menggunakan akun kamu.', 'success', 'Pendaftaran Berhasil');
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -74,6 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'samesite' => 'Lax'
                 ]);
 
+                flash("Selamat datang kembali, {$admin['nama']}! Anda berhasil masuk ke panel admin.", 'success', 'Login Berhasil');
+
                 header('Location: admin/index.php');
                 exit;
             }
@@ -104,6 +109,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'samesite' => 'Lax'
                 ]);
 
+                flash("Selamat datang kembali, {$pelanggan['nama']}! Senang melihat Anda kembali.", 'success', 'Login Berhasil');
+
                 header('Location: pengguna/index.php');
                 exit;
             }
@@ -127,6 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="assets/css/custom.css?v=<?= filemtime(__DIR__ . '/assets/css/custom.css') ?>" rel="stylesheet">
 
     <style>
         * {
@@ -471,6 +479,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <p>Masukkan akun kamu untuk melanjutkan ke dashboard.</p>
                 </div>
 
+                <?php if (function_exists('showFlash')): ?>
+                    <?php showFlash(); ?>
+                <?php endif; ?>
+
                 <?php if ($berhasil !== ''): ?>
                     <div class="alert alert-success">
                         <?= e($berhasil) ?>
@@ -481,6 +493,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="alert alert-danger">
                         <?= e($error) ?>
                     </div>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            if (typeof window.createAppToast === 'function') {
+                                window.createAppToast(<?= json_encode($error) ?>, 'danger', 'Login Gagal');
+                            }
+                        });
+                    </script>
                 <?php endif; ?>
 
                 <form method="POST" action="login.php" onsubmit="const btn=this.querySelector('button[type=submit]'); if(btn){btn.disabled=true; btn.innerHTML='<span class=\'spinner-border spinner-border-sm me-2\'></span>Memproses...';}">
@@ -550,6 +569,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         });
     </script>
 
+    <script src="assets/js/app.js"></script>
 </body>
 
 </html>

@@ -24,6 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($nama === '' || $no_hp === '' || $email === '' || $password === '' || $konfirmasi === '') {
         $error = 'Semua kolom wajib diisi.';
+    } elseif (!preg_match('/^[0-9+\s\-]{8,20}$/', $no_hp)) {
+        $error = 'Format nomor HP tidak valid (gunakan 8–20 digit angka).';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Format email tidak valid.';
     } elseif (strlen($password) < 8) {
@@ -33,12 +35,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             $stmt = $pdo->prepare(
-                'SELECT id_pelanggan FROM pelanggan WHERE email = ? OR no_hp = ? LIMIT 1'
+                'SELECT id_pelanggan, email, no_hp FROM pelanggan WHERE email = ? OR no_hp = ? LIMIT 1'
             );
             $stmt->execute([$email, $no_hp]);
+            $existing = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($stmt->fetch()) {
-                $error = 'Email atau nomor HP sudah terdaftar. Silakan gunakan data lain.';
+            if ($existing) {
+                if ($existing['no_hp'] === $no_hp) {
+                    $error = "Nomor WhatsApp / HP '{$no_hp}' sudah terdaftar. Silakan gunakan nomor lain.";
+                } else {
+                    $error = "Alamat email '{$email}' sudah terdaftar. Silakan gunakan email lain atau masuk ke akun Anda.";
+                }
             } else {
                 $hash = password_hash($password, PASSWORD_DEFAULT);
 
@@ -47,12 +54,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
                 $stmt->execute([$nama, $no_hp, $email, $hash]);
 
+                flash('Pendaftaran akun berhasil! Silakan login menggunakan akun Anda.', 'success', 'Pendaftaran Berhasil');
                 header('Location: login.php?daftar=berhasil');
                 exit;
             }
         } catch (PDOException $e) {
             error_log('Registrasi gagal: ' . $e->getMessage());
-            $error = 'Terjadi kesalahan sistem saat mendaftar. Silakan coba lagi.';
+            if ($e->getCode() === '23000' || ($e->errorInfo[1] ?? 0) == 1062) {
+                if (stripos($e->getMessage(), 'no_hp') !== false) {
+                    $error = "Nomor WhatsApp / HP '{$no_hp}' sudah terdaftar. Silakan gunakan nomor lain.";
+                } else {
+                    $error = "Alamat email '{$email}' sudah terdaftar. Silakan gunakan email lain atau masuk ke akun Anda.";
+                }
+            } else {
+                $error = 'Terjadi kesalahan sistem saat mendaftar. Silakan coba lagi.';
+            }
         }
     }
 }
@@ -67,6 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="assets/css/custom.css?v=<?= filemtime(__DIR__ . '/assets/css/custom.css') ?>" rel="stylesheet">
 
     <style>
         :root {
@@ -184,10 +201,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h1 class="register-title">Buat Akun</h1>
     <p class="subtitle">Daftar untuk memesan laundry dengan mudah.</p>
 
+    <?php if (function_exists('showFlash')): ?>
+        <?php showFlash(); ?>
+    <?php endif; ?>
+
     <?php if ($error !== ''): ?>
         <div class="alert alert-danger py-2 px-3 small">
             <?= e($error) ?>
         </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                if (typeof window.createAppToast === 'function') {
+                    window.createAppToast(<?= json_encode($error) ?>, 'danger', 'Pendaftaran Gagal');
+                }
+            });
+        </script>
     <?php endif; ?>
 
     <form method="POST" action="register.php" onsubmit="const btn=this.querySelector('button[type=submit]'); if(btn){btn.disabled=true; btn.innerHTML='<span class=\'spinner-border spinner-border-sm me-2\'></span>Mendaftarkan...';}">
@@ -247,5 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/app.js"></script>
 </body>
 </html>
