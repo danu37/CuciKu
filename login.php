@@ -5,7 +5,7 @@ $https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_set_cookie_params([
         'lifetime' => 0,
-        'path' => '/cuciKu/',
+        'path' => '/',
         'secure' => $https,
         'httponly' => true,
         'samesite' => 'Lax'
@@ -17,6 +17,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 
 
 require_once __DIR__ . '/includes/database.php';
+require_once __DIR__ . '/includes/helpers.php';
 
 // Arahkan pengguna yang sudah login ke dashboard masing-masing.
 if (!empty($_SESSION['admin_logged_in'])) {
@@ -67,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Jangan menyimpan password di cookie.
                 setcookie('cuciku_role', 'admin', [
                     'expires' => time() + (7 * 24 * 60 * 60),
-                    'path' => '/cuciKu/',
+                    'path' => '/',
                     'secure' => $https,
                     'httponly' => true,
                     'samesite' => 'Lax'
@@ -81,10 +82,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("
                 SELECT id_pelanggan, nama, email, password
                 FROM pelanggan
-                WHERE email = ?
+                WHERE email = ? OR no_hp = ? OR nama = ?
                 LIMIT 1
             ");
-            $stmt->execute([$usernameEmail]);
+            $stmt->execute([$usernameEmail, $usernameEmail, $usernameEmail]);
             $pelanggan = $stmt->fetch();
 
             if ($pelanggan && password_verify($password, $pelanggan['password'])) {
@@ -97,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 setcookie('cuciku_role', 'pelanggan', [
                     'expires' => time() + (7 * 24 * 60 * 60),
-                    'path' => '/cuciKu/',
+                    'path' => '/',
                     'secure' => $https,
                     'httponly' => true,
                     'samesite' => 'Lax'
@@ -114,11 +115,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-
-function e($value)
-{
-    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
-}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -129,6 +125,7 @@ function e($value)
     <title>Login | CuciKu</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
@@ -444,15 +441,15 @@ function e($value)
 
                 <div class="features">
                     <div class="feature">
-                        <div class="feature-icon">🧺</div>
+                        <div class="feature-icon"><i class="bi bi-bag-check"></i></div>
                         <span>Pemesanan laundry lebih praktis</span>
                     </div>
                     <div class="feature">
-                        <div class="feature-icon">⏱️</div>
+                        <div class="feature-icon"><i class="bi bi-clock-history"></i></div>
                         <span>Pantau status dan estimasi selesai</span>
                     </div>
                     <div class="feature">
-                        <div class="feature-icon">🧾</div>
+                        <div class="feature-icon"><i class="bi bi-receipt-cutoff"></i></div>
                         <span>Nomor nota dan riwayat pesanan</span>
                     </div>
                 </div>
@@ -486,7 +483,7 @@ function e($value)
                     </div>
                 <?php endif; ?>
 
-                <form method="POST" action="login.php">
+                <form method="POST" action="login.php" onsubmit="const btn=this.querySelector('button[type=submit]'); if(btn){btn.disabled=true; btn.innerHTML='<span class=\'spinner-border spinner-border-sm me-2\'></span>Memproses...';}">
                     <div class="mb-4">
                         <label for="username_email" class="form-label">
                             Username Admin / Email Pengguna
@@ -515,12 +512,14 @@ function e($value)
                                 autocomplete="current-password"
                                 required>
                             <button type="button" class="show-password"
-                                id="togglePassword">Lihat</button>
+                                id="togglePassword" aria-label="Tampilkan atau sembunyikan password">
+                                <i class="bi bi-eye"></i>
+                            </button>
                         </div>
                     </div>
 
                     <button type="submit" class="btn btn-login">
-                        Masuk ke Akun →
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Masuk ke Akun
                     </button>
                 </form>
 
@@ -530,7 +529,7 @@ function e($value)
                 </div>
 
                 <div class="secure-note">
-                    🔒 Akun kamu dilindungi melalui proses autentikasi.
+                    <i class="bi bi-shield-check me-1"></i> Akun kamu dilindungi melalui proses autentikasi.
                 </div>
             </div>
         </main>
@@ -545,7 +544,9 @@ function e($value)
             const sedangTampil = passwordInput.type === 'text';
 
             passwordInput.type = sedangTampil ? 'password' : 'text';
-            togglePassword.textContent = sedangTampil ? 'Lihat' : 'Sembunyikan';
+            togglePassword.innerHTML = sedangTampil
+                ? '<i class="bi bi-eye"></i>'
+                : '<i class="bi bi-eye-slash"></i>';
         });
     </script>
 

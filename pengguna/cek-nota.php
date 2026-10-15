@@ -4,6 +4,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 require_once __DIR__ . '/../includes/database.php';
+require_once __DIR__ . '/../includes/helpers.php';
 
 if (
     empty($_SESSION['pelanggan_logged_in']) ||
@@ -15,12 +16,12 @@ if (
 
 function hCekNota($value)
 {
-    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+    return e($value);
 }
 
 function rupiahCekNota($value)
 {
-    return 'Rp ' . number_format((float) $value, 0, ',', '.');
+    return rupiah($value);
 }
 
 $idPelanggan = (int) $_SESSION['pelanggan_id'];
@@ -180,7 +181,7 @@ require __DIR__ . '/includes/header.php';
                     </a>
                     <a class="btn btn-outline-secondary"
                        href="cek-nota.php">
-                         Cari struk lain
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Cari struk lain
                     </a>
                 </div>
             </div>

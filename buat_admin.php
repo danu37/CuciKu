@@ -1,7 +1,11 @@
-    <?php
+<?php
+/**
+ * buat_admin.php — Script pembuat / reset akun admin awal.
+ */
+
 require_once __DIR__ . '/includes/database.php';
 
-$nama = 'Admin Laundry';
+$nama     = 'Admin Laundry';
 $username = 'admin';
 $password = 'laundry123';
 
@@ -12,7 +16,6 @@ try {
     $stmt->execute([$username]);
 
     $admin = $stmt->fetch();
-
     $hash = password_hash($password, PASSWORD_DEFAULT);
 
     if ($admin) {
@@ -21,17 +24,16 @@ try {
         );
         $stmt->execute([$nama, $hash, $admin['id']]);
 
-        echo 'Password admin berhasil diperbarui.';
+        echo 'Password admin berhasil diperbarui.' . PHP_EOL;
     } else {
         $stmt = $pdo->prepare(
-            'INSERT INTO admins (nama, username, password)
-             VALUES (?, ?, ?)'
+            'INSERT INTO admins (nama, username, password) VALUES (?, ?, ?)'
         );
         $stmt->execute([$nama, $username, $hash]);
 
-        echo 'Akun admin berhasil dibuat.';
+        echo 'Akun admin berhasil dibuat.' . PHP_EOL;
     }
 } catch (PDOException $e) {
     error_log($e->getMessage());
-    echo 'Gagal membuat akun. Periksa tabel admins dan koneksi database.';
+    echo 'Gagal membuat akun. Periksa tabel admins dan koneksi database.' . PHP_EOL;
 }

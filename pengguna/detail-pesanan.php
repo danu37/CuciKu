@@ -4,6 +4,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 require_once __DIR__ . '/../includes/database.php';
+require_once __DIR__ . '/../includes/helpers.php';
 
 if (
     empty($_SESSION['pelanggan_logged_in']) ||
@@ -15,12 +16,12 @@ if (
 
 function hDetail($value)
 {
-    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+    return e($value);
 }
 
 function rupiahDetail($value)
 {
-    return 'Rp ' . number_format((float) $value, 0, ',', '.');
+    return rupiah($value);
 }
 
 $statusList = [
@@ -171,19 +172,24 @@ require_once __DIR__ . '/includes/header.php';
     box-shadow: 0 0 0 4px #e4f7f4;
 }
 .btn-cuciku {
-    display: inline-block;
-    background: #087f8c;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--brand, #267b72);
     color: white;
     border: 0;
     border-radius: 10px;
-    padding: 11px 17px;
+    padding: 10px 18px;
     font-size: 13px;
     font-weight: 700;
     text-decoration: none;
+    box-shadow: 0 4px 14px rgba(38, 123, 114, .2);
+    transition: background-color .15s ease, transform .1s ease;
 }
 .btn-cuciku:hover {
-    background: #075b66;
+    background: var(--brand-dark, #1f665f);
     color: white;
+    transform: translateY(-1px);
 }
 .btn-light-outline {
     display: inline-block;
@@ -204,11 +210,50 @@ require_once __DIR__ . '/includes/header.php';
     .detail-row { font-size: 13px; }
 }
 @media print {
-    nav, footer, .no-print, .sidebar, .topbar { display: none !important; }
-    body { background: white !important; }
-    .app-shell, .main-content, .page-content { display: block !important; margin: 0 !important; padding: 0 !important; }
-    .detail-wrap { margin: 0 auto; }
-    .detail-card, .invoice-banner { box-shadow: none; }
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    nav, footer, .no-print, .sidebar, .topbar, .mobile-menu-btn, .page-footer {
+        display: none !important;
+    }
+    body {
+        background: #fff !important;
+        color: #183044 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .app-shell, .main-content, .page-content {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        width: 100% !important;
+    }
+    .detail-wrap {
+        max-width: 100% !important;
+        margin: 0 auto !important;
+        padding: 10px !important;
+    }
+    .invoice-banner {
+        border-radius: 12px !important;
+        box-shadow: none !important;
+        padding: 20px !important;
+        margin-bottom: 20px !important;
+        border: 1px solid #087f8c !important;
+    }
+    .detail-card {
+        box-shadow: none !important;
+        border: 1px solid #d9e3e8 !important;
+        border-radius: 12px !important;
+        padding: 18px !important;
+        page-break-inside: avoid;
+    }
+    .total-box {
+        border: 1px solid #b8e6dd !important;
+        background: #eaf8f5 !important;
+    }
 }
 </style>
 
@@ -217,12 +262,14 @@ require_once __DIR__ . '/includes/header.php';
 <?php if (!$pesanan): ?>
 
     <div class="detail-card text-center py-5">
-        <div class="display-5 mb-3">🔎</div>
+        <i class="bi bi-search fs-1 text-muted d-block mb-3"></i>
         <h2 class="h4 fw-bold">Pesanan tidak ditemukan</h2>
         <p class="text-secondary">
             Pesanan tidak tersedia atau bukan milik akun kamu.
         </p>
-        <a href="riwayat.php" class="btn-cuciku">Kembali ke Riwayat</a>
+        <a href="riwayat.php" class="btn-cuciku">
+            <i class="bi bi-arrow-left me-1"></i> Kembali ke Riwayat
+        </a>
     </div>
 
 <?php else: ?>
@@ -254,10 +301,10 @@ require_once __DIR__ . '/includes/header.php';
         </div>
         <div class="d-flex gap-2 flex-wrap no-print">
             <a href="riwayat.php" class="btn-light-outline">
-                ← Riwayat
+                <i class="bi bi-arrow-left me-1"></i> Riwayat
             </a>
             <button type="button" onclick="window.print()" class="btn-cuciku">
-                Cetak Nota
+                <i class="bi bi-printer me-1"></i> Cetak Nota
             </button>
         </div>
     </div>

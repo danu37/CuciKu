@@ -39,22 +39,12 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     function statusAdmin($status)
     {
-        $labels = [
-            'waiting' => 'Menunggu',
-            'washing' => 'Sedang Dicuci',
-            'drying' => 'Sedang Dikeringkan',
-            'ironing' => 'Sedang Disetrika',
-            'ready' => 'Siap Diambil',
-            'completed' => 'Selesai',
-            'cancelled' => 'Dibatalkan',
-        ];
-
-        return $labels[$status] ?? ucfirst($status);
+        return statusLabel($status);
     }
 
     function rupiahAdmin($nominal)
     {
-        return 'Rp ' . number_format((float) $nominal, 0, ',', '.');
+        return rupiah($nominal);
     }
     ?>
 
@@ -227,8 +217,10 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 <?php if ($shown === 0): ?>
                     <tr>
-                        <td colspan="7" class="text-center py-4">
-                            Belum ada pesanan aktif dari pengguna.
+                        <td colspan="7" class="text-center py-5">
+                            <i class="bi bi-inbox fs-1 text-muted d-block mb-2 opacity-50"></i>
+                            <strong class="d-block text-dark fs-6 mb-1">Belum Ada Pesanan Aktif</strong>
+                            <span class="text-muted small">Semua transaksi telah selesai atau belum ada pesanan baru yang masuk.</span>
                         </td>
                     </tr>
                 <?php endif; ?>

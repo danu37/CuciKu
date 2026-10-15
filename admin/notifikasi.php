@@ -1,7 +1,4 @@
 <?php
-ini_set('display_errors', '1');
-error_reporting(E_ALL);
-
 require_once __DIR__ . '/../includes/database.php';
 require_once __DIR__ . '/../includes/init.php';
 
@@ -9,32 +6,17 @@ $pageTitle = 'Notifikasi';
 
 function notifE($value)
 {
-    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+    return e($value);
 }
 
 function notifTanggal($tanggal)
 {
-    if (!$tanggal) {
-        return '-';
-    }
-
-    $timestamp = strtotime($tanggal);
-    return $timestamp ? date('d/m/Y H:i', $timestamp) : '-';
+    return formatTanggal($tanggal);
 }
 
 function notifStatus($status)
 {
-    $labels = [
-        'waiting' => 'Menunggu',
-        'washing' => 'Sedang Dicuci',
-        'drying' => 'Pengeringan',
-        'ironing' => 'Penyetrikaan',
-        'ready' => 'Siap Diambil',
-        'completed' => 'Selesai',
-        'cancelled' => 'Dibatalkan'
-    ];
-
-    return $labels[$status] ?? $status;
+    return statusLabel($status);
 }
 
 /* Ambil cucian siap diambil */
@@ -116,8 +98,8 @@ require __DIR__ . '/../includes/header.php';
     gap: 8px;
     padding: 11px 15px;
     border-radius: 12px;
-    background: #f0efff;
-    color: #5049d8;
+    background: var(--brand-light, #e7f5f2);
+    color: var(--brand, #267b72);
     font-weight: 700;
     font-size: 13px;
 }
@@ -177,8 +159,8 @@ require __DIR__ . '/../includes/header.php';
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f0efff;
-    color: #5b55e7;
+    background: var(--brand-light, #e7f5f2);
+    color: var(--brand, #267b72);
     font-size: 19px;
 }
 .notification-symbol.ready {
@@ -206,17 +188,21 @@ require __DIR__ . '/../includes/header.php';
     line-height: 1.6;
 }
 .notification-action {
-    color: #5049d8;
+    color: var(--brand, #267b72);
     text-decoration: none;
-    border: 1px solid #dcdafe;
+    border: 1px solid #d5ebe7;
+    background: #fff;
     border-radius: 8px;
-    padding: 7px 10px;
+    padding: 7px 11px;
     font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
+    transition: background-color .15s ease, border-color .15s ease;
 }
 .notification-action:hover {
-    background: #f0efff;
+    background: var(--brand-light, #e7f5f2);
+    border-color: var(--brand, #267b72);
+    color: var(--brand-dark, #1f665f);
 }
 .notification-empty {
     padding: 34px 18px;
@@ -242,7 +228,7 @@ require __DIR__ . '/../includes/header.php';
     margin-top: 20px;
 }
 .notification-unread {
-    background: #f0efff;
+    background: #f4faf9;
 }
 .notification-type {
     display: inline-block;
@@ -354,7 +340,7 @@ require __DIR__ . '/../includes/header.php';
 
                         <a class="notification-action"
                            href="antrean.php?modal=edit&amp;code=<?= urlencode($o['kode_transaksi']) ?>">
-                            Perbarui
+                            <i class="bi bi-pencil-square me-1"></i> Perbarui
                         </a>
                     </div>
                 <?php endforeach; ?>
@@ -397,7 +383,7 @@ require __DIR__ . '/../includes/header.php';
 
                         <a class="notification-action"
                            href="antrean.php?modal=edit&amp;code=<?= urlencode($o['kode_transaksi']) ?>">
-                            Periksa
+                            <i class="bi bi-arrow-right-circle me-1"></i> Periksa
                         </a>
                     </div>
                 <?php endforeach; ?>

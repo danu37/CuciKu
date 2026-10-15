@@ -1,4 +1,3 @@
-
 <?php
 if (session_status() !== PHP_SESSION_ACTIVE) {
     session_start();
@@ -7,6 +6,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 date_default_timezone_set('Asia/Jakarta');
 
 require_once __DIR__ . '/../includes/database.php';
+require_once __DIR__ . '/../includes/helpers.php';
 
 // =====================================
 // 1. VALIDASI LOGIN
@@ -212,25 +212,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 function h($nilai) {
-    return htmlspecialchars((string) $nilai, ENT_QUOTES, 'UTF-8');
+    return e($nilai);
 }
 
 function formatRupiah($nilai) {
-    return 'Rp ' . number_format((float) $nilai, 0, ',', '.');
+    return rupiah($nilai);
 }
 
 function labelStatus($status) {
-    $statusList = [
-        'waiting' => 'Menunggu',
-        'washing' => 'Diproses',
-        'drying' => 'Diproses',
-        'ironing' => 'Diproses',
-        'ready' => 'Siap Diambil',
-        'completed' => 'Selesai',
-        'cancelled' => 'Dibatalkan',
-    ];
-
-    return $statusList[$status] ?? $status;
+    return statusLabel($status);
 }
 $judulHalaman = 'Pesan Laundry';
 $halamanAktif = 'pesan';
@@ -273,17 +263,19 @@ require __DIR__ . '/includes/header.php';
         }
 
         .btn-primary-custom {
-            background: #087f8c;
+            background: var(--brand, #267b72);
             color: white;
             padding: 12px 18px;
             border: none;
             border-radius: 10px;
             font-weight: 700;
+            transition: background-color .15s ease, transform .1s ease;
         }
 
         .btn-primary-custom:hover {
-            background: #075b66;
+            background: var(--brand-dark, #1f665f);
             color: white;
+            transform: translateY(-1px);
         }
 
         .total-box {
@@ -315,11 +307,48 @@ require __DIR__ . '/includes/header.php';
             .card-custom { padding: 18px; }
             .hero h1 { font-size: 23px; }
         }
+
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            nav, footer, .sidebar, .topbar, .mobile-menu-btn, .page-footer, .hero, .no-print, .alert {
+                display: none !important;
+            }
+            body {
+                background: #fff !important;
+                color: #183044 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .app-shell, .main-content, .page-content, .main {
+                display: block !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: 0 !important;
+                box-shadow: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .card-custom {
+                max-width: 480px !important;
+                margin: 0 auto !important;
+                border: 1px dashed #087f8c !important;
+                box-shadow: none !important;
+                padding: 24px !important;
+                page-break-inside: avoid;
+            }
+            .total-box {
+                border: 1px solid #c9eee7 !important;
+                background: #e9f9f6 !important;
+            }
+        }
 </style>
 
 <div class="main">
     <section class="hero">
-        <h1>Pesan Laundry 🧺</h1>
+        <h1><i class="bi bi-bag-plus me-2"></i>Pesan Laundry</h1>
         <p class="mb-0">Halo, <?= h($namaPelanggan) ?>. Isi formulir berikut untuk membuat pesanan baru.</p>
     </section>
 
@@ -330,7 +359,7 @@ require __DIR__ . '/includes/header.php';
     <?php if ($pesananBerhasil): ?>
         <section class="card-custom mb-4">
             <div class="text-center mb-4">
-                <div style="font-size:48px">✅</div>
+                <div class="mb-3 text-success fs-1"><i class="bi bi-check-circle-fill"></i></div>
                 <h2 class="fw-bold">Pesanan Berhasil Dibuat!</h2>
                 <p class="muted">Simpan nomor nota berikut untuk memeriksa pesananmu.</p>
             </div>
@@ -376,11 +405,17 @@ require __DIR__ . '/includes/header.php';
                 <strong>Belum Lunas</strong>
             </div>
 
-            <div class="d-flex flex-wrap gap-2 mt-4">
-                <a href="riwayat.php" class="btn btn-primary-custom">Lihat Riwayat Pesanan</a>
-                <a href="buat-pesanan.php" class="btn btn-outline-success">Buat Pesanan Lagi</a>
+            <div class="d-flex flex-wrap gap-2 mt-4 no-print">
+                <a href="riwayat.php" class="btn btn-primary-custom">
+                    <i class="bi bi-clock-history me-1"></i> Lihat Riwayat Pesanan
+                </a>
+                <a href="buat-pesanan.php" class="btn btn-outline-success">
+                    <i class="bi bi-plus-circle me-1"></i> Buat Pesanan Lagi
+                </a>
                 <button type="button" class="btn btn-outline-secondary"
-                        onclick="window.print()">Cetak Nota</button>
+                        onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i> Cetak Nota
+                </button>
             </div>
         </section>
     <?php else: ?>
@@ -388,7 +423,7 @@ require __DIR__ . '/includes/header.php';
             <h4 class="fw-bold mb-1">Formulir Pemesanan</h4>
             <p class="muted mb-4">Pastikan berat pakaian dan paket sudah benar.</p>
 
-            <form method="POST" action="buat-pesanan.php" id="formPesanan">
+            <form method="POST" action="buat-pesanan.php" id="formPesanan" onsubmit="const btn=this.querySelector('button[type=submit]'); if(btn){btn.disabled=true; btn.innerHTML='<span class=\'spinner-border spinner-border-sm me-2\'></span>Memproses Pesanan...';}">
                 <input type="hidden" name="csrf_token"
                        value="<?= h($_SESSION['csrf_pesanan']) ?>">
 
@@ -431,7 +466,7 @@ require __DIR__ . '/includes/header.php';
                 </div>
 
                 <button type="submit" class="btn-primary-custom w-100">
-                    Buat Pesanan Sekarang
+                    <i class="bi bi-send me-1"></i> Buat Pesanan Sekarang
                 </button>
             </form>
         </section>

@@ -4,6 +4,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 require_once __DIR__ . '/../includes/database.php';
+require_once __DIR__ . '/../includes/helpers.php';
 
 if (
     empty($_SESSION['pelanggan_logged_in']) ||
@@ -15,12 +16,12 @@ if (
 
 function hRiwayat($value)
 {
-    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+    return e($value);
 }
 
 function rupiahRiwayat($value)
 {
-    return 'Rp ' . number_format((float) $value, 0, ',', '.');
+    return rupiah($value);
 }
 
 $statusList = [
@@ -66,6 +67,10 @@ $stmt->execute($params);
 $pesananList = $stmt->fetchAll();
 
 $totalPesanan = count($pesananList);
+$perPage = 8;
+$totalPages = max(1, (int) ceil($totalPesanan / $perPage));
+$page = max(1, min($totalPages, (int) ($_GET['page'] ?? 1)));
+$pagePesanan = array_slice($pesananList, ($page - 1) * $perPage, $perPage);
 
 $judulHalaman = 'Riwayat Pesanan';
 $halamanAktif = 'riwayat';
@@ -295,8 +300,36 @@ require_once __DIR__ . '/includes/header.php';
     text-decoration: none;
 }
 
-.btn-order:hover {
-    background: #075b66;
+.riwayat-pagination {
+    padding: 16px 22px;
+    border-top: 1px solid #edf1f4;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: #82909b;
+}
+
+.riwayat-pages {
+    display: flex;
+    gap: 6px;
+}
+
+.riwayat-pages a,
+.riwayat-pages span {
+    padding: 7px 11px;
+    border-radius: 8px;
+    background: #f1f2f8;
+    color: #30394d;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.riwayat-pages .active {
+    background: var(--brand, #267b72);
     color: white;
 }
 
@@ -327,7 +360,7 @@ require_once __DIR__ . '/includes/header.php';
         </div>
 
         <a href="buat-pesanan.php" class="btn-order mt-0">
-            + Pesan Laundry
+            <i class="bi bi-plus-lg me-1"></i> Pesan Laundry
         </a>
     </div>
 
@@ -375,7 +408,7 @@ require_once __DIR__ . '/includes/header.php';
                     <button type="submit"
                             class="btn btn-dark"
                             style="min-height:44px;border-radius:10px">
-                        Cari
+                        <i class="bi bi-search me-1"></i> Cari
                     </button>
                 </div>
 
@@ -394,7 +427,7 @@ require_once __DIR__ . '/includes/header.php';
         <?php if (empty($pesananList)): ?>
 
             <div class="empty-history">
-                <div class="empty-icon">🧺</div>
+                <div class="empty-icon"><i class="bi bi-inbox text-secondary fs-2"></i></div>
                 <h3 class="h5 fw-bold">Belum ada pesanan</h3>
                 <p class="text-secondary small">
                     Pesanan yang sesuai dengan pencarian kamu belum ditemukan.
@@ -406,7 +439,7 @@ require_once __DIR__ . '/includes/header.php';
                     </a>
                 <?php else: ?>
                     <a href="buat-pesanan.php" class="btn-order">
-                        Buat Pesanan Pertama
+                        <i class="bi bi-plus-lg me-1"></i> Buat Pesanan Pertama
                     </a>
                 <?php endif; ?>
             </div>
@@ -429,7 +462,7 @@ require_once __DIR__ . '/includes/header.php';
                     </thead>
 
                     <tbody>
-                        <?php foreach ($pesananList as $pesanan): ?>
+                        <?php foreach ($pagePesanan as $pesanan): ?>
                             <?php
                             $status = $statusList[$pesanan['status']]
                                 ?? ['Tidak diketahui', 'secondary'];
@@ -507,7 +540,7 @@ require_once __DIR__ . '/includes/header.php';
                                             href="detail-pesanan.php?id=<?= (int) $pesanan['id'] ?>"
                                             class="btn-detail"
                                         >
-                                            Detail
+                                            <i class="bi bi-eye me-1"></i>Detail
                                         </a>
                                         <a
                                             href="cek-nota.php?nota=<?= urlencode($pesanan['kode_transaksi']) ?>"
@@ -522,6 +555,51 @@ require_once __DIR__ . '/includes/header.php';
                         <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+
+            <div class="riwayat-pagination">
+                <span>
+                    Menampilkan <?= count($pagePesanan) ?> dari <?= $totalPesanan ?> pesanan
+                </span>
+
+                <?php if ($totalPages > 1): ?>
+                    <div class="riwayat-pages">
+                        <?php if ($page > 1): ?>
+                            <a href="?cari=<?= urlencode($kataKunci) ?>&amp;status=<?= urlencode($filterStatus) ?>&amp;page=<?= $page - 1 ?>">
+                                Sebelumnya
+                            </a>
+                        <?php endif; ?>
+
+                        <?php
+                        $startPage = max(1, $page - 2);
+                        $endPage = min($totalPages, $page + 2);
+                        if ($startPage > 1): ?>
+                            <a href="?cari=<?= urlencode($kataKunci) ?>&amp;status=<?= urlencode($filterStatus) ?>&amp;page=1">1</a>
+                            <?php if ($startPage > 2): ?><span>…</span><?php endif; ?>
+                        <?php endif; ?>
+
+                        <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
+                            <?php if ($i === $page): ?>
+                                <span class="active"><?= $i ?></span>
+                            <?php else: ?>
+                                <a href="?cari=<?= urlencode($kataKunci) ?>&amp;status=<?= urlencode($filterStatus) ?>&amp;page=<?= $i ?>">
+                                    <?= $i ?>
+                                </a>
+                            <?php endif; ?>
+                        <?php endfor; ?>
+
+                        <?php if ($endPage < $totalPages): ?>
+                            <?php if ($endPage < $totalPages - 1): ?><span>…</span><?php endif; ?>
+                            <a href="?cari=<?= urlencode($kataKunci) ?>&amp;status=<?= urlencode($filterStatus) ?>&amp;page=<?= $totalPages ?>"><?= $totalPages ?></a>
+                        <?php endif; ?>
+
+                        <?php if ($page < $totalPages): ?>
+                            <a href="?cari=<?= urlencode($kataKunci) ?>&amp;status=<?= urlencode($filterStatus) ?>&amp;page=<?= $page + 1 ?>">
+                                Berikutnya
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </div>
 
         <?php endif; ?>

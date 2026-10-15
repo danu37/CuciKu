@@ -1,9 +1,11 @@
-
 <?php
-session_start();
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 date_default_timezone_set('Asia/Jakarta');
 
 require_once __DIR__ . '/../includes/database.php';
+require_once __DIR__ . '/../includes/helpers.php';
 
 if (
     empty($_SESSION['pelanggan_logged_in']) ||
@@ -11,14 +13,6 @@ if (
 ) {
     header('Location: ../login.php');
     exit;
-}
-
-function e($value) {
-    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
-}
-
-function rupiah($angka) {
-    return 'Rp ' . number_format((float) $angka, 0, ',', '.');
 }
 
 $nama = $_SESSION['pelanggan_nama'] ?? 'Pelanggan';
@@ -70,10 +64,17 @@ require __DIR__ . '/includes/header.php';
 .hero{background:linear-gradient(120deg,#075b66,#087f8c,#19b5a5);color:white;padding:35px;border-radius:22px;margin-bottom:25px}
 .hero h1{font-size:30px;font-weight:800}
 .hero p{color:#e4fffc}
-.btn-order{background:white;color:#075b66;font-weight:bold;padding:12px 18px;border-radius:10px;text-decoration:none;display:inline-block}
-.stat{background:white;padding:22px;border-radius:16px;border:1px solid #e4ebef;height:100%}
-.stat .num{font-size:30px;font-weight:800}
-.stat small{color:#718096}
+.btn-order{background:white;color:#075b66;font-weight:bold;padding:12px 18px;border-radius:10px;text-decoration:none;display:inline-block;transition:background-color .15s ease, transform .1s ease}
+.btn-order:hover{background:#f0fbf8;color:#064e58;transform:translateY(-1px)}
+.stat{background:white;padding:18px 20px 16px;border-radius:16px;border:1px solid #e4ebef;height:100%;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 2px 6px rgba(24,48,68,.03)}
+.stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.stat-top span{color:#718096;font-size:13px;font-weight:600}
+.stat-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:17px}
+.icon-blue{color:#4a79c8;background:#edf3ff}
+.icon-orange{color:#c88a35;background:#fff3df}
+.icon-purple{color:#8972c8;background:#f2eeff}
+.icon-green{color:#298672;background:#e7f6f0}
+.stat .num{font-size:28px;font-weight:800;color:#172638;line-height:1.15}
 .panel{background:white;padding:22px;border:1px solid #e4ebef;border-radius:16px;margin-top:25px}
 .nota-lookup{display:flex;align-items:center;gap:18px;background:#fff;border:1px solid #e6edf2;border-radius:16px;padding:20px 22px;margin-top:22px;box-shadow:0 3px 12px #162c3e05}
 .nota-lookup-icon{display:grid;place-items:center;flex:0 0 48px;height:48px;border-radius:14px;background:#e7f5f2;color:#267b72;font-size:22px}
@@ -94,9 +95,9 @@ require __DIR__ . '/includes/header.php';
 
 <div class="container-main">
     <section class="hero">
-        <h1>Halo, <?= e($nama) ?>! 👋</h1>
+        <h1>Halo, <?= e($nama) ?>!</h1>
         <p>Selamat datang di CuciKu. Pesan laundry dan pantau status cucianmu dengan mudah.</p>
-        <a class="btn-order" href="buat-pesanan.php">+ Buat Pesanan Laundry</a>
+        <a class="btn-order" href="buat-pesanan.php"><i class="bi bi-plus-lg me-1"></i> Buat Pesanan Laundry</a>
     </section>
 
     <section class="nota-lookup" aria-labelledby="notaLookupTitle">
@@ -116,19 +117,43 @@ require __DIR__ . '/includes/header.php';
         </form>
     </section>
 
-    <h4 class="fw-bold mb-3">Ringkasan Pesanan</h4>
+    <h4 class="fw-bold mb-3 mt-4">Ringkasan Pesanan</h4>
     <div class="row g-3">
         <div class="col-6 col-lg-3">
-            <div class="stat"><div>🧺</div><div class="num"><?= $totalPesanan ?></div><small>Total Pesanan</small></div>
+            <div class="stat">
+                <div class="stat-top">
+                    <span>Total Pesanan</span>
+                    <span class="stat-icon icon-blue"><i class="bi bi-stack"></i></span>
+                </div>
+                <div class="num"><?= $totalPesanan ?></div>
+            </div>
         </div>
         <div class="col-6 col-lg-3">
-            <div class="stat"><div>⏳</div><div class="num"><?= $diproses ?></div><small>Menunggu / Diproses</small></div>
+            <div class="stat">
+                <div class="stat-top">
+                    <span>Diproses</span>
+                    <span class="stat-icon icon-orange"><i class="bi bi-hourglass-split"></i></span>
+                </div>
+                <div class="num"><?= $diproses ?></div>
+            </div>
         </div>
         <div class="col-6 col-lg-3">
-            <div class="stat"><div>📦</div><div class="num"><?= $siapDiambil ?></div><small>Siap Diambil</small></div>
+            <div class="stat">
+                <div class="stat-top">
+                    <span>Siap Diambil</span>
+                    <span class="stat-icon icon-green"><i class="bi bi-check2-circle"></i></span>
+                </div>
+                <div class="num"><?= $siapDiambil ?></div>
+            </div>
         </div>
         <div class="col-6 col-lg-3">
-            <div class="stat"><div>✅</div><div class="num"><?= $selesai ?></div><small>Selesai</small></div>
+            <div class="stat">
+                <div class="stat-top">
+                    <span>Selesai</span>
+                    <span class="stat-icon icon-purple"><i class="bi bi-bag-check-fill"></i></span>
+                </div>
+                <div class="num"><?= $selesai ?></div>
+            </div>
         </div>
     </div>
 
@@ -140,10 +165,12 @@ require __DIR__ . '/includes/header.php';
 
         <?php if (!$pesanan): ?>
             <div class="text-center py-5">
-                <div style="font-size:40px">🧺</div>
+                <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
                 <h5>Belum Ada Pesanan</h5>
                 <p class="text-secondary">Pesanan laundry kamu akan muncul di sini.</p>
-                <a href="buat-pesanan.php" class="btn btn-success">Pesan Sekarang</a>
+                <a href="buat-pesanan.php" class="btn btn-brand">
+                    <i class="bi bi-plus-lg me-1"></i> Pesan Sekarang
+                </a>
             </div>
         <?php else: ?>
             <div class="table-responsive">
@@ -174,7 +201,9 @@ require __DIR__ . '/includes/header.php';
                         </td>
                         <td>
                             <a href="detail-pesanan.php?id=<?= (int) $p['id'] ?>"
-                               class="btn btn-sm btn-outline-success">Detail</a>
+                               class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-eye me-1"></i> Detail
+                            </a>
                         </td>
                     </tr>
                     <?php endforeach; ?>
